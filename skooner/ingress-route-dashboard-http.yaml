@@ -7,7 +7,7 @@ spec:
   entryPoints: [web] 
   routes:
     - kind: Rule
-      match: Host(`monitor.sandbox.com`)
+      match: Host(`skooner.sandbox.com`)
       services:
         - kind: Service
           name: skooner 
