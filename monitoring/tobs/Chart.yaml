@@ -1,0 +1,32 @@
+apiVersion: v2
+dependencies:
+- condition: timescaledb-single.enabled
+  name: timescaledb-single
+  repository: https://charts.timescale.com
+  version: 0.27.4
+- condition: promscale.enabled
+  name: promscale
+  repository: https://charts.timescale.com
+  version: 15.0.0
+- condition: kube-prometheus-stack.enabled
+  name: kube-prometheus-stack
+  repository: https://prometheus-community.github.io/helm-charts
+  version: 44.2.1
+- condition: opentelemetry-operator.enabled
+  name: opentelemetry-operator
+  repository: https://open-telemetry.github.io/opentelemetry-helm-charts
+  version: 0.20.4
+description: A Helm chart for tobs, The Observability Stack for Kubernetes
+home: https://github.com/timescale/tobs
+keywords:
+- observability
+- monitoring
+- tracing
+- opentelemetry
+maintainers:
+- name: timescale
+  url: https://www.timescale.com/
+name: tobs
+sources:
+- https://github.com/timescale/tobs
+version: 20.8.0

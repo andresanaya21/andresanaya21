@@ -1,0 +1,29 @@
+{{- $postgresql := .Values.keycloak.postgresql -}}
+{{- if and $postgresql.persistence.enabled $postgresql.persistence.existingClaim }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  {{- with $postgresql.persistence.existingClaim }}
+  name: {{ tpl . $ }}
+  {{- end }}
+  {{- with $postgresql.persistence.annotations }}
+  annotations:
+    {{- range $key, $value := . }}
+      {{ $key }}: {{ $value }}
+    {{- end }}
+  {{- end }}
+  labels:
+    {{- include "ahoy.labels" . | nindent 4 }}
+spec:
+  accessModes:
+  {{- range $postgresql.persistence.accessModes }}
+    - {{ . | quote }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ $postgresql.persistence.size | quote }}
+  {{ include "common.storage.class" (dict "persistence" $postgresql.persistence "global" .Values.global) }}
+  {{- if $postgresql.persistence.selector }}
+  selector: {{- include "common.tplvalues.render" (dict "value" $postgresql.persistence.selector "context" $) | nindent 10 }}
+  {{- end -}}
+{{- end -}}

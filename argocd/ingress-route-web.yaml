@@ -1,0 +1,17 @@
+---
+
+apiVersion: traefik.containo.us/v1alpha1 
+kind: IngressRoute
+metadata:
+  name: argocd-server
+  namespace: argocd 
+spec:
+  entryPoints: [web] 
+  routes:
+    - kind: Rule
+      match: Host(`cd.tactile5g.int`)
+      services:
+        - kind: Service
+          name: argocd-server 
+          port: 80 
+          scheme: http

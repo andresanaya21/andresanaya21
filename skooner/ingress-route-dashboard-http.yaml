@@ -1,0 +1,15 @@
+apiVersion: traefik.containo.us/v1alpha1 
+kind: IngressRoute
+metadata:
+  name: skooner-dashboard-ing-route 
+  namespace: kube-system 
+spec:
+  entryPoints: [web] 
+  routes:
+    - kind: Rule
+      match: Host(`monitor.sandbox.com`)
+      services:
+        - kind: Service
+          name: skooner 
+          port: 80
+          scheme: http

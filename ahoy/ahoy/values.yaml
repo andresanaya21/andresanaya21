@@ -1,0 +1,415 @@
+ahoy:
+  host: ahoy.minikube.host
+
+  # The Ahoy OAuth 2 OIDC configuration; by default configured to use KeyCloak
+  auth:
+    clientId: ahoy
+    redirectUri: https://ahoy.minikube.host/
+    issuer: https://keycloak.minikube.host/auth/realms/Ahoy
+    jwkSetUri: http://ahoy-keycloak-http.ahoy.svc/auth/realms/Ahoy/protocol/openid-connect/certs
+    accountUri: https://keycloak.minikube.host/auth/realms/Ahoy/account/?referrer=ahoy
+
+# The number of replicas to create (has no effect if autoscaling enabled)
+replicas: 1
+
+image:
+  # The Ahoy image repository
+  repository: lsdopen/ahoy
+  # Overrides the Ahoy image tag whose default is the chart appVersion
+  tag: ""
+  # The Ahoy image pull policy
+  pullPolicy: Always
+
+# Image pull secrets for the Pod
+imagePullSecrets: [ ]
+# - name: myRegistryKeySecretName
+
+# Pod restart policy. One of `Always`, `OnFailure`, or `Never`
+restartPolicy: Always
+
+serviceAccount:
+  # Specifies whether a ServiceAccount should be created
+  create: false
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+  # Additional annotations for the ServiceAccount
+  annotations: { }
+  # Additional labels for the ServiceAccount
+  labels: { }
+  # Image pull secrets that are attached to the ServiceAccount
+  imagePullSecrets: [ ]
+
+# SecurityContext for the entire Pod. Every container running in the Pod will inherit this SecurityContext. This might be relevant when other components of the environment inject additional containers into running Pods (service meshes are the most prominent example for this)
+podSecurityContext:
+  fsGroup: 1000
+
+# SecurityContext for the Ahoy container
+securityContext:
+  runAsUser: 1000
+  runAsNonRoot: true
+
+# Annotations for the Deployment
+deploymentAnnotations: { }
+
+# Additional labels for the Deployment
+deploymentLabels: { }
+
+# Additional Pod labels
+podLabels: { }
+
+# Additional Pod annotations
+podAnnotations: { }
+
+# Liveness probe configuration
+livenessProbe: |
+  httpGet:
+    path: /actuator/health/liveness
+    port: http
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  successThreshold: 1
+  failureThreshold: 5
+
+# Readiness probe configuration
+readinessProbe: |
+  httpGet:
+    path: /actuator/health/readiness
+    port: http
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  successThreshold: 1
+  failureThreshold: 5
+
+# Startup probe configuration
+startupProbe: |
+  httpGet:
+    path: /actuator/health/liveness
+    port: http
+  initialDelaySeconds: 30
+  timeoutSeconds: 1
+  failureThreshold: 60
+  periodSeconds: 5
+
+# Pod resource requests and limits
+resources: { }
+# requests:
+#   cpu: "500m"
+#   memory: "1024Mi"
+# limits:
+#   cpu: "500m"
+#   memory: "1024Mi"
+
+# Additional init containers, e.g. for providing custom themes
+extraInitContainers: ""
+
+# When using service meshes which rely on a sidecar, it may be necessary to skip init containers altogether,
+# since the sidecar doesn't start until the init containers are done, and the sidecar may be required
+# for network access.
+# For example, Istio in strict mTLS mode prevents the pgchecker init container from ever completing
+skipInitContainers: false
+
+# Lifecycle hooks for the Ahoy container
+lifecycleHooks: |
+  preStop:
+    exec:
+      command: [ "/bin/sh", "-c", "sleep 3" ]
+#  postStart:
+#    exec:
+#      command:
+#        - /bin/sh
+#        - -c
+#        - ls
+
+# Termination grace period in seconds for Ahoy shutdown. Clusters with a large cache might need to extend this to give Infinispan more time to rebalance
+terminationGracePeriodSeconds: 60
+
+extraEnv: ""
+#- name: JAVA_OPTS
+#  value: -Xms64M -Xmx256M
+#- name: PROFILES
+#  value: prod,keycloak
+#- name: ARGS
+#  value: --spring.config.location=/tmp/config
+
+# Additional environment variables for Ahoy mapped from Secret or ConfigMap
+extraEnvFrom: ""
+
+# Node labels for Pod assignment
+nodeSelector: { }
+
+# Pod affinity
+affinity: { }
+
+# Add additional ports, e.g. for admin console or exposing JGroups ports
+extraPorts: [ ]
+
+service:
+  # Annotations for headless and HTTP Services
+  annotations: { }
+  # Additional labels for headless and HTTP Services
+  labels: { }
+  # key: value
+  # The Service type
+  type: ClusterIP
+  # Optional IP for the load balancer. Used for services of type LoadBalancer only
+  loadBalancerIP: ""
+  # The http Service port
+  httpPort: 8080
+  # The HTTP Service node port if type is NodePort
+  httpNodePort: null
+  # The HTTPS Service port
+  httpsPort: 8443
+  # The HTTPS Service node port if type is NodePort
+  httpsNodePort: null
+  # When using Service type LoadBalancer, you can restrict source ranges allowed
+  # to connect to the LoadBalancer, e.g. will result in Security Groups
+  # (or equivalent) with inbound source ranges allowed to connect
+  loadBalancerSourceRanges: [ ]
+  # When using Service type LoadBalancer, you can preserve the source IP seen in the container
+  # by changing the default (Cluster) to be Local.
+  # See https://kubernetes.io/docs/tasks/access-application-cluster/create-external-load-balancer/#preserving-the-client-source-ip
+  externalTrafficPolicy: "Cluster"
+  # Session affinity
+  # See https://kubernetes.io/docs/concepts/services-networking/service/#proxy-mode-userspace
+  sessionAffinity: ""
+  # Session affinity config
+  sessionAffinityConfig: { }
+
+ingress:
+  # If `true`, an Ingress is created
+  enabled: false 
+  # The name of the Ingress Class associated with this ingress
+  ingressClassName: ""
+  # The Service port targeted by the Ingress
+  servicePort: http
+  # Ingress annotations
+  annotations: { }
+  # Additional Ingress labels
+  labels: { }
+  # List of rules for the Ingress
+  rules:
+    - # Ingress host
+      host: 'ahoy.minikube.host'
+      # Paths for the host
+      paths:
+        - path: /
+          pathType: Prefix
+  # TLS configuration
+  tls:
+    - hosts:
+        - ahoy.minikube.host
+      secretName: ""
+
+route:
+  # If `true`, an OpenShift Route is created
+  enabled: false
+  # Path for the Route
+  path: /
+  # Route annotations
+  annotations: { }
+  # Additional Route labels
+  labels: { }
+  # Host name for the Route
+  host: ""
+  # TLS configuration
+  tls:
+    # If `true`, TLS is enabled for the Route
+    enabled: true
+    # Insecure edge termination policy of the Route. Can be `None`, `Redirect`, or `Allow`
+    insecureEdgeTerminationPolicy: Redirect
+    # TLS termination of the route. Can be `edge`, `passthrough`, or `reencrypt`
+    termination: edge
+
+postgresql:
+  enabled: true
+
+  ## PostgreSQL user (has superuser privileges if username is `postgres`)
+  ## ref: https://github.com/bitnami/bitnami-docker-postgresql/blob/master/README.md#setting-the-root-password-on-first-run
+  postgresqlUsername: postgres
+
+  ## PostgreSQL password
+  ## ref: https://github.com/bitnami/bitnami-docker-postgresql/blob/master/README.md#setting-the-root-password-on-first-run
+  ##
+  postgresqlPassword: ahoy123456
+
+  ## Create a database
+  ## ref: https://github.com/bitnami/bitnami-docker-postgresql/blob/master/README.md#creating-a-database-on-first-run
+  ##
+  postgresqlDatabase: ahoy
+
+  persistence:
+    ## @param persistence.enabled Enable persistence using PVC
+    ##
+    enabled: true
+    ## @param persistence.existingClaim Provide an existing `PersistentVolumeClaim`, the value is evaluated as a template.
+    ## If defined, a PVC will be created by Ahoy templates with the provided claim name
+    ## The value is evaluated as a template, so, for example, the name can depend on .Release or .Chart
+    ##
+    existingClaim: ""
+    ## @param persistence.size PVC Storage Request for PostgreSQL volume
+    ##
+    size: 8Gi
+
+pgchecker:
+  image:
+    # Docker image used to check Postgresql readiness at startup
+    repository: docker.io/busybox
+    # Image tag for the pgchecker image
+    tag: 1.32
+    # Image pull policy for the pgchecker image
+    pullPolicy: IfNotPresent
+  # SecurityContext for the pgchecker container
+  securityContext:
+    allowPrivilegeEscalation: false
+    runAsUser: 1000
+    runAsGroup: 1000
+    runAsNonRoot: true
+  # Resource requests and limits for the pgchecker container
+  resources:
+    requests:
+      cpu: "20m"
+      memory: "32Mi"
+    limits:
+      cpu: "20m"
+      memory: "32Mi"
+
+keycloak:
+  install: true
+
+  # Additional environment variables for Keycloak
+  extraEnv: |
+    - name: KEYCLOAK_IMPORT
+      value: /tmp/ahoy/ahoy-realm.json
+    - name: KEYCLOAK_USER
+      value: admin
+    - name: KEYCLOAK_PASSWORD
+      value: admin
+    - name: PROXY_ADDRESS_FORWARDING
+      value: "true"
+
+  # Add additional volumes, e.g. for custom themes
+  extraVolumes: |
+    - name: ahoy-realm
+      configMap:
+        name: ahoy-keycloak-realm
+
+  # Add additional volumes mounts, e.g. for custom themes
+  extraVolumeMounts: |
+    - name: ahoy-realm
+      mountPath: "/tmp/ahoy"
+
+  service:
+    # The Service type
+    type: ClusterIP
+
+  ingress:
+    # If `true`, an Ingress is created
+    enabled: false 
+    # The Service port targeted by the Ingress
+    servicePort: http
+    # Ingress annotations
+    annotations: { }
+    # Additional Ingress labels
+    labels: { }
+    # List of rules for the Ingress
+    rules:
+      - # Ingress host
+        host: 'keycloak.minikube.host'
+        # Paths for the host
+        paths:
+          - path: /
+            pathType: Prefix
+    # TLS configuration
+    tls:
+      - hosts:
+          - keycloak.minikube.host
+        secretName: ""
+
+  postgresql:
+    nameOverride: keycloak-postgresql
+
+    containerPorts:
+      postgresql: 5432
+
+    # If `true`, the Postgresql dependency is enabled
+    enabled: true
+    # PostgreSQL User to create
+    postgresqlUsername: keycloak
+    # PostgreSQL Password for the new user
+    postgresqlPassword: keycloak
+    # PostgreSQL Database to create
+    postgresqlDatabase: keycloak
+
+    persistence:
+      ## @param persistence.enabled Enable persistence using PVC
+      ##
+      enabled: true
+      ## @param persistence.existingClaim Provide an existing `PersistentVolumeClaim`, the value is evaluated as a template.
+      ## If defined, a PVC will be created by Ahoy templates with the provided claim name
+      ## The value is evaluated as a template, so, for example, the name can depend on .Release or .Chart
+      ##
+      existingClaim: ""
+      ## @param persistence.size PVC Storage Request for PostgreSQL volume
+      ##
+      size: 8Gi
+
+argo-cd:
+  install: true
+
+  ## ArgoCD configuration
+  ## Ref: https://github.com/argoproj/argo-cd
+  ##
+  nameOverride: argocd
+  fullnameOverride: ""
+  kubeVersionOverride: ""
+
+  server:
+    extraArgs:
+      - --insecure
+
+    ingress:
+      enabled: false 
+      annotations:
+        kubernetes.io/ingress.class: nginx
+        nginx.ingress.kubernetes.io/proxy-connect-timeout: "3600"
+        nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+        nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+
+      labels: { }
+      ingressClassName: ""
+
+      hosts:
+        - argocd.minikube.host
+      paths:
+        [ ]
+      extraPaths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: ahoy-argocd-server
+              port:
+                name: http
+      tls:
+        [ ]
+      https: false
+
+    config:
+      accounts.ahoy: apiKey,login
+
+    rbacConfig:
+      policy.csv: g, ahoy, role:admin
+
+sealed-secrets:
+  # set to true if you'd like sealed-secrets to be installed as part of Ahoy, false if you're using your own sealed-secrets installation
+  install: true
+
+  # if not installing sealed-secrets as part of Ahoy; set the name and namespace of the existing sealed-secrets controller
+  #  fullnameOverride: my-own-sealed-secrets-controller
+  #  namespace: sealed-secrets-controller-namespace
+
+  commandArgs:
+    - --update-status

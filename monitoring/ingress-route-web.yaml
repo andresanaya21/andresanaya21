@@ -1,0 +1,17 @@
+---
+
+apiVersion: traefik.containo.us/v1alpha1 
+kind: IngressRoute
+metadata:
+  name: monitoring 
+  namespace: monitoring 
+spec:
+  entryPoints: [web] 
+  routes:
+    - kind: Rule
+      match: Host(`grafana.tactile5g.int`)
+      services:
+        - kind: Service
+          name: monitoring-grafana 
+          port: 80 
+          scheme: http

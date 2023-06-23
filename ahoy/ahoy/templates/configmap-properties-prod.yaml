@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "ahoy.fullname" . }}-prod
+  labels:
+    {{- include "ahoy.labels" . | nindent 4 }}
+data:
+  application-prod.properties: |
+    ahoy.release-name={{ .Release.Name }}
+    ahoy.release-namespace={{ .Release.Namespace }}
+    ahoy.repo-path=./cache/repo
+    ahoy.host={{ .Values.ahoy.host }}
+    ahoy.auth.client-id={{ .Values.ahoy.auth.clientId }}
+    ahoy.auth.issuer={{ .Values.ahoy.auth.issuer }}
+    ahoy.auth.jwk-set-uri={{ .Values.ahoy.auth.jwkSetUri }}
+    ahoy.auth.account-uri={{ .Values.ahoy.auth.accountUri }}
+    ahoy.sealed-secrets.controller-name={{ include "sealed-secrets.fullname" (index .Subcharts "sealed-secrets") }}
+    ahoy.sealed-secrets.controller-namespace={{ include "sealed-secrets.namespace" (index .Subcharts "sealed-secrets") }}
+    logging.level.za.co.lsd.ahoy=INFO
+
+    server.port=8080
+    server.shutdown=graceful
+
+    spring.liquibase.enabled=true
+    spring.datasource.url=jdbc:postgresql://{{ include "ahoy.postgresql.fullname" . }}/{{ .Values.postgresql.postgresqlDatabase }}
+    spring.datasource.platform=postgres
+    spring.datasource.username={{ .Values.postgresql.postgresqlUsername }}
+    spring.datasource.password={{ .Values.postgresql.postgresqlPassword }}
+    spring.datasource.driverClassName=org.postgresql.Driver
+    spring.jpa.database-platform=org.hibernate.dialect.PostgreSQL10Dialect
+    spring.jpa.hibernate.ddl-auto=none
+    spring.jpa.show-sql=false

@@ -1,0 +1,15 @@
+dependencies:
+- name: timescaledb-single
+  repository: https://charts.timescale.com
+  version: 0.27.4
+- name: promscale
+  repository: https://charts.timescale.com
+  version: 15.0.0
+- name: kube-prometheus-stack
+  repository: https://prometheus-community.github.io/helm-charts
+  version: 44.2.1
+- name: opentelemetry-operator
+  repository: https://open-telemetry.github.io/opentelemetry-helm-charts
+  version: 0.20.4
+digest: sha256:ecb3246fa0c6ef96290c1bcc54ec891442ee9ea98118c0f47b91b8d5c0c45088
+generated: "2023-01-25T14:08:25.062143756Z"
