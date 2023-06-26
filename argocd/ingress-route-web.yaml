@@ -9,7 +9,7 @@ spec:
   entryPoints: [web] 
   routes:
     - kind: Rule
-      match: Host(`argo-cd.tactile5g.int`)
+      match: Host(`argo.tactile5g.int`)
       services:
         - kind: Service
           name: argocd-server 
