@@ -1,0 +1,38 @@
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: Cluster
+metadata:
+  name: my-cluster
+  namespace: vcluster
+spec:
+  controlPlaneRef:
+    apiVersion: infrastructure.cluster.x-k8s.io/v1alpha1
+    kind: VCluster
+    name: my-cluster
+  infrastructureRef:
+    apiVersion: infrastructure.cluster.x-k8s.io/v1alpha1
+    kind: VCluster
+    name: my-cluster
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1alpha1
+kind: VCluster
+metadata:
+  name: my-cluster
+  namespace: vcluster
+spec:
+  controlPlaneEndpoint:
+    host: ""
+    port: 0
+  helmRelease:
+    chart:
+      name: vcluster-k8s
+      repo: null
+      version: null
+    values: |-
+      service:
+        type: LoadBalancer
+      sync:
+        persistentvolumeclaims:
+          enabled: true
+        ingresses:
+          enabled: true
+  kubernetesVersion: 1.27.3
