@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: another-app
+spec:
+  selector:
+    matchLabels:
+      app: another-app
+  template:
+    metadata:
+      labels:
+        app: another-app
+    spec:
+      containers:
+      - name: app
+        image: nginx
+        envFrom:
+        - configMapRef:
+            name: app-cm
+        ports:
+        - containerPort: 80

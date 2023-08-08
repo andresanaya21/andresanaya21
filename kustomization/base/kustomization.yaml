@@ -1,0 +1,39 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- deployment.yaml
+- service.yaml
+
+# overiding values, it will change the tag of the image in deployment, pods yamls
+images:
+- name: nginx
+  newTag: 1.21.6
+
+# adding replicas in deployment
+replicas:
+- name: another-app
+  count: 3
+
+# prefix, suffix and namespaces. It replace the name of resources to myprefix-my-suffix and setup the namespace
+namePrefix: myprefix-
+nameSuffix: -mysuffix
+namespace: my-namespace
+
+# adding labels and annotations to the resources k8s
+commonLabels:
+  my.label: mylabel
+commonAnnotations:
+  my.annotation: myannotation
+  
+# creating configmap
+configMapGenerator:
+- name: app-cm
+  literals:
+  - MY_CONFIG_1=config one
+  - MY_CONFIG_2=config two
+
+# setting up secrets
+secretGenerator:
+- name: app-secret
+  envs:
+  - secrets.properties
