@@ -17,3 +17,11 @@ output "security_group_id" {
 output "worker_node_role_name" {
   value = aws_iam_role.worker_role.name
 }
+
+output "version" {
+  value = var.k8s_version
+}
+
+output "oidc_provider_arn" {
+  value = data.tls_certificate.oicd.url
+}
