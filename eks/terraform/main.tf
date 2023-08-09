@@ -74,6 +74,7 @@ module "eks_blueprints_addons" {
   }
   
   enable_kube_prometheus_stack           = true
+  enable_aws_load_balancer_controller = true
 
   tags = {
     Owner = "andres"

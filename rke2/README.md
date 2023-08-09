@@ -1,8 +1,11 @@
 # RKE2
-# Ubuntu instructions
+## Ubuntu instructions
+
+```
 # stop the software firewall
 systemctl stop ufw
 systemctl disable ufw
+
 # get updates, install nfs, and apply
 apt update
 apt install nfs-common -y
@@ -59,3 +62,4 @@ metadata:
   namespace: metallb-system```
  
 kubectl apply -f  ~/metallb/ipaddress_pools.yaml
+```
