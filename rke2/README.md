@@ -1,4 +1,4 @@
-# RKE2
+# RKE2 Server
 ## Ubuntu instructions
 
 ```
@@ -64,4 +64,39 @@ metadata:
   namespace: metallb-system```
  
 kubectl apply -f  ~/metallb/ipaddress_pools.yaml
+```
+
+## ssm install
+- Add SSMRoleInstance (mazonSSMManagedInstanceCore policy)
+```
+sudo snap install amazon-ssm-agent --classic
+sudo snap list amazon-ssm-agent
+sudo snap start amazon-ssm-agent
+sudo snap services amazon-ssm-agent
+```
+
+## RKE2 agent
+```
+# stop the software firewall
+systemctl stop ufw
+systemctl disable ufw
+
+# get updates, install nfs, and apply
+apt update
+apt install nfs-common -y
+apt upgrade -y
+
+# clean up
+apt autoremove -y
+
+# config.yaml
+cat > /etc/rancher/rke2/config.yaml << EOF
+server: https://my-cluster.rke2.int:9345
+token: K10ca0c38d4ff90d8b80319ab34092e315a8b732622e6adf97bc9eb0536REDACTED::server:ec0308000b8a6b595da000efREDACTED
+EOF
+
+curl -sfL https://get.rke2.io | INSTALL_RKE2_TYPE="agent" sh -
+
+
+
 ```

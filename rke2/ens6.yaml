@@ -1,0 +1,22 @@
+# /etc/netplan/ens6.yaml 
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+     ens6:
+      addresses:
+       - 172.31.2.29/20 #The private ip of newly created ENI - Secondary ENI
+      dhcp4: no
+      routes:
+       - to: 0.0.0.0/0
+         via: 172.31.0.1 # Default gateway
+         table: 1002
+       - to: 172.31.10.253  #ip primary interface
+         via: 0.0.0.0
+         scope: link
+         table: 1002
+      routing-policy:
+        - from: 172.31.2.29
+          table: 1002
+
+#netplan --debug apply
