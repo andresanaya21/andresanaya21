@@ -15,8 +15,10 @@ apt upgrade -y
 apt autoremove -y
 
 curl -sfL https://get.rke2.io | sh -
-# start and enable for restarts -systemctl enablerke2-server.service
- systemctl start rke2-server.service
+# start and enable for restarts
+
+systemctl enable rke2-server.service
+systemctl start rke2-server.service
 
 # simlink all the things - kubectl
 ln -s $ (find /var/lib/rancher/rke2/data/ -name kubectl) /usr/local/bin/kubectl
