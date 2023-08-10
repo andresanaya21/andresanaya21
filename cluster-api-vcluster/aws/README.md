@@ -65,8 +65,9 @@ clusterctl get kubeconfig capi-cluster > capi-cluster.kubeconfig
 kubectl --kubeconfig=./capi-cluster.kubeconfig \
   apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.24.1/manifests/calico.yaml
 
+kubectl taint nodes --all node.cluster.x-k8s.io/uninitialized- --kubeconfig ./capi-cluster.kubeconfig
+kubectl taint nodes --all node.cloudprovider.kubernetes.io/uninitialized- --kubeconfig ./capi-cluster.kubeconfig
 kubectl --kubeconfig=./capi-cluster.kubeconfig get nodes
-
 ```
 
 ## delete cluster
