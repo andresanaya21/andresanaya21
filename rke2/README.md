@@ -120,5 +120,5 @@ token: [token from /var/lib/rancher/rke2/server/node-token on server node 1]
 EOF
 
 curl -sfL https://get.rke2.io | INSTALL_RKE2_TYPE="agent" sh -
-
+systemctl enable --now rke2-agent.service
 ```
