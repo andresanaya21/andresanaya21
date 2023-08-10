@@ -1,0 +1,135 @@
+# this file install infra in aws (sgs, route-table, ec2, lb)
+# install 1 master (control plane), 1 node (worker) using an existent infra (vcp, igw, natgtw)
+# https://blog.scottlowe.org/2019/09/09/consuming-preexisting-aws-infrastructure-with-cluster-api/
+# https://techbloc.net/archives/4661
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: Cluster
+metadata:
+  name: capi-cluster
+  namespace: default
+spec:
+  clusterNetwork:
+    pods:
+      cidrBlocks:
+      - 192.168.0.0/16
+  controlPlaneRef:
+    apiVersion: controlplane.cluster.x-k8s.io/v1beta1
+    kind: KubeadmControlPlane
+    name: capi-cluster-control-plane
+  infrastructureRef:
+    apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
+    kind: AWSCluster
+    name: capi-cluster
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
+kind: AWSCluster
+metadata:
+  name: capi-cluster
+  namespace: default
+spec:
+  region: eu-west-3
+  sshKeyName: discovery-ec2
+  network:
+    vpc:
+      id: vpc-0acb88eb13a7fa6a6
+    subnets:
+      - id: subnet-01c529cc527673f79  #subnet private
+      - id: subnet-0983023ab6e6ce607  #subnet private
+      - id: subnet-03e3964ad839e51d0  #subnet private
+      - id: subnet-0b915276a465dc977  #subnet public
+      - id: subnet-07b7668aa0d30aa9b  #subnet public
+      - id: subnet-002148a13cf72ca66  #subnet public
+---
+apiVersion: controlplane.cluster.x-k8s.io/v1beta1
+kind: KubeadmControlPlane
+metadata:
+  name: capi-cluster-control-plane
+  namespace: default
+spec:
+  kubeadmConfigSpec:
+    clusterConfiguration:
+      apiServer:
+        extraArgs:
+          cloud-provider: external
+      controllerManager:
+        extraArgs:
+          cloud-provider: external
+    initConfiguration:
+      nodeRegistration:
+        kubeletExtraArgs:
+          cloud-provider: external
+        name: '{{ ds.meta_data.local_hostname }}'
+    joinConfiguration:
+      nodeRegistration:
+        kubeletExtraArgs:
+          cloud-provider: external
+        name: '{{ ds.meta_data.local_hostname }}'
+  machineTemplate:
+    infrastructureRef:
+      apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
+      kind: AWSMachineTemplate
+      name: capi-cluster-control-plane
+  replicas: 1
+  version: v1.27.3
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
+kind: AWSMachineTemplate
+metadata:
+  name: capi-cluster-control-plane
+  namespace: default
+spec:
+  template:
+    spec:
+      iamInstanceProfile: control-plane.cluster-api-provider-aws.sigs.k8s.io
+      instanceType: t3.large
+      sshKeyName: discovery-ec2
+---
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: MachineDeployment
+metadata:
+  name: capi-cluster-md-0
+  namespace: default
+spec:
+  clusterName: capi-cluster
+  replicas: 1
+  selector:
+    matchLabels: null
+  template:
+    spec:
+      bootstrap:
+        configRef:
+          apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
+          kind: KubeadmConfigTemplate
+          name: capi-cluster-md-0
+      clusterName: capi-cluster
+      infrastructureRef:
+        apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
+        kind: AWSMachineTemplate
+        name: capi-cluster-md-0
+      version: v1.27.3
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
+kind: AWSMachineTemplate
+metadata:
+  name: capi-cluster-md-0
+  namespace: default
+spec:
+  template:
+    spec:
+      iamInstanceProfile: nodes.cluster-api-provider-aws.sigs.k8s.io
+      instanceType: t3.large
+      sshKeyName: discovery-ec2
+---
+apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
+kind: KubeadmConfigTemplate
+metadata:
+  name: capi-cluster-md-0
+  namespace: default
+spec:
+  template:
+    spec:
+      joinConfiguration:
+        nodeRegistration:
+          kubeletExtraArgs:
+            cloud-provider: external
+          name: '{{ ds.meta_data.local_hostname }}'
