@@ -82,7 +82,7 @@ kubectl apply -f metallb-native.yaml
 
 vim ~/metallb/ipaddress_pools.yaml
 
-```apiVersion: metallb.io/v1beta1
+apiVersion: metallb.io/v1beta1
 kind: IPAddressPool
 metadata:
   name: production
@@ -95,7 +95,7 @@ apiVersion: metallb.io/v1beta1
 kind: L2Advertisement
 metadata:
   name: l2-advert
-  namespace: metallb-system```
+  namespace: metallb-system
  
 kubectl apply -f  ~/metallb/ipaddress_pools.yaml
 ```
