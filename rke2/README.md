@@ -1,4 +1,14 @@
 # RKE2 Server
+## ssm install
+- Add SSMRoleInstance (mazonSSMManagedInstanceCore policy)
+- Install ssm-aget (if needed). It is installed by default in ubuntu version 22.
+```
+sudo snap install amazon-ssm-agent --classic
+sudo snap list amazon-ssm-agent
+sudo snap start amazon-ssm-agent
+sudo snap services amazon-ssm-agent
+```
+
 ## Ubuntu instructions
 
 ```
@@ -14,11 +24,21 @@ apt upgrade -y
 # clean up
 apt autoremove -y
 
-curl -sfL https://get.rke2.io | sh -
-# start and enable for restarts
+mkdir -p /etc/rancher/rke2/  && vim /etc/rancher/rke2/config.yaml
+token: my-shared-secret
+tls-san:
+  - my-cluster-domain.com
+  - 10.0.130.239
+  - ip-10-0-130-239.eu-west-3.compute.internal
 
-systemctl enable rke2-server.service
-systemctl start rke2-server.service
+# add in /etc/hosts if not DNS
+10.0.130.239 my-cluster-domain.com
+
+# download rke2 in master mode
+curl -sfL https://get.rke2.io | sh -
+
+# start and enable for restarts
+systemctl enable --now rke2-server.service
 
 # simlink all the things - kubectl
 ln -s $(find /var/lib/rancher/rke2/data/ -name kubectl) /usr/local/bin/kubectl
@@ -27,6 +47,20 @@ ln -s $(find /var/lib/rancher/rke2/data/ -name kubectl) /usr/local/bin/kubectl
 export KUBECONFIG=/etc/rancher/rke2/rke2.yaml
 # check node status
 kubectl  get node
+
+# to add more than one master
+curl -sfL https://get.rke2.io | INSTALL_RKE2_TYPE="server" sh -
+
+mkdir -p /etc/rancher/rke2/  && vim /etc/rancher/rke2/config.yaml
+
+server: https://my-cluster-domain.com:9345
+token: [token from /var/lib/rancher/rke2/server/node-token on server node 1]
+tls-san:
+  - my-cluster-domain.com
+
+# add in /etc/hosts if not DNS
+10.0.130.239 my-cluster-domain.com
+
 
 # helm
 curl -L https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
@@ -65,16 +99,6 @@ metadata:
  
 kubectl apply -f  ~/metallb/ipaddress_pools.yaml
 ```
-
-## ssm install
-- Add SSMRoleInstance (mazonSSMManagedInstanceCore policy)
-```
-sudo snap install amazon-ssm-agent --classic
-sudo snap list amazon-ssm-agent
-sudo snap start amazon-ssm-agent
-sudo snap services amazon-ssm-agent
-```
-
 ## RKE2 agent
 ```
 # stop the software firewall
@@ -91,12 +115,10 @@ apt autoremove -y
 
 # config.yaml
 cat > /etc/rancher/rke2/config.yaml << EOF
-server: https://my-cluster.rke2.int:9345
-token: K10ca0c38d4ff90d8b80319ab34092e315a8b732622e6adf97bc9eb0536REDACTED::server:ec0308000b8a6b595da000efREDACTED
+server: https://my-cluster-domain.com:9345
+token: [token from /var/lib/rancher/rke2/server/node-token on server node 1]
 EOF
 
 curl -sfL https://get.rke2.io | INSTALL_RKE2_TYPE="agent" sh -
-
-
 
 ```

@@ -1,0 +1,16 @@
+network:
+   ethernets:
+       ens5:
+           dhcp4: true
+           dhcp6: false
+           match:
+               macaddress: 06:56:52:09:f7:6e
+           set-name: ens5
+       ens6:
+           dhcp4: false
+   vlans:
+       ens6.11:
+           id: 11
+           link: ens6
+           addresses: [172.21.32.21/24]
+   version: 2
