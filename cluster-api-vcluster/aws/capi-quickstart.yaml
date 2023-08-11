@@ -1,6 +1,8 @@
 # this file install infra in aws (vpc, igw, natgwt, route-table)
 # additionally ec2, lb, sgs
 # install 1 master (control plane), 1 node (worker)
+# https://github.com/kubernetes-sigs/cluster-api-provider-openstack/blob/main/templates/cluster-template.yaml
+# https://github.com/kubernetes-sigs/cluster-api-provider-aws/blob/main/templates/cluster-template-simple-clusterclass.yaml
 apiVersion: cluster.x-k8s.io/v1beta1
 kind: Cluster
 metadata:
@@ -47,11 +49,13 @@ spec:
       nodeRegistration:
         kubeletExtraArgs:
           cloud-provider: external
+          provider-id: aws:///'{{ ds.meta_data.instance_id }}'
         name: '{{ ds.meta_data.local_hostname }}'
     joinConfiguration:
       nodeRegistration:
         kubeletExtraArgs:
           cloud-provider: external
+          provider-id: aws:///'{{ ds.meta_data.instance_id }}'
         name: '{{ ds.meta_data.local_hostname }}'
   machineTemplate:
     infrastructureRef:
@@ -125,4 +129,5 @@ spec:
         nodeRegistration:
           kubeletExtraArgs:
             cloud-provider: external
+            provider-id: aws:///'{{ ds.meta_data.instance_id }}'
           name: '{{ ds.meta_data.local_hostname }}'

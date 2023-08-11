@@ -52,10 +52,16 @@ kubectl apply -f capi-cluster.yaml
 kubectl get cluster
 
 clusterctl describe cluster capi-cluster
+clusterctl describe cluster capi-cluster --echo
+clusterctl describe cluster capi-cluster --show-conditions KubeadmControlPlane
 
 kubectl get kubeadmcontrolplane
+kubectl describe kubeadmconfigtemplate
+kubectl get machine
 
 clusterctl get kubeconfig capi-cluster > capi-cluster.kubeconfig
+
+kubectl get machine
 
 ```
 
@@ -73,5 +79,31 @@ kubectl --kubeconfig=./capi-cluster.kubeconfig get nodes
 ## delete cluster
 ```
 kubectl delete cluster capi-cluster
+
+```
+
+
+```
+$ curl -o iam-policy.json https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/v2.4.7/docs/install/iam_policy.json
+
+$ aws iam create-policy \
+    --policy-name AWSLoadBalancerControllerIAMPolicy \
+    --policy-document file://iam-policy.json
+
+# attach policy to role attached on instances cluster
+
+
+# aws load balancer controller
+
+$ helm repo add eks https://aws.github.io/eks-charts
+
+# install cert-manager
+
+# install targetgroupbinding crds
+$ kubectl apply -k "github.com/aws/eks-charts/stable/aws-load-balancer-controller//crds?ref=master"
+
+# install aws load balancer controller
+
+$ helm upgrade -i aws-load-balancer-controller eks/aws-load-balancer-controller -n kube-system --set clusterName=capi-cluster
 
 ```
