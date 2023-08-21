@@ -1,14 +1,16 @@
-## clusterctl
 ```
+# clusterctl
+
 curl -L https://github.com/kubernetes-sigs/cluster-api/releases/download/v1.5.0/clusterctl-linux-amd64 -o clusterctl
 
 sudo install -o root -g root -m 0755 clusterctl /usr/local/bin/clusterctl
 
-clusterctl version```
-
-
-## clusterawsadm 
+clusterctl version
 ```
+
+```
+# clusterawsadm 
+
 curl -L https://github.com/kubernetes-sigs/cluster-api-provider-aws/releases/download/v2.2.1/clusterawsadm-linux-amd64 -o clusterawsadm
 
 chmod +x clusterawsadm
@@ -35,18 +37,22 @@ clusterctl init --infrastructure aws
 ```
 
 ```
+# export variables
+
 export AWS_REGION=eu-west-3
 export AWS_SSH_KEY_NAME=discovery-ec2
 # Select instance types
 export AWS_CONTROL_PLANE_MACHINE_TYPE=t3.large
 export AWS_NODE_MACHINE_TYPE=t3.large
 
+# generate cluster
 clusterctl generate cluster capi-cluster \
   --kubernetes-version v1.27.3 \
   --control-plane-machine-count=1 \
   --worker-machine-count=1 \
   > capi-cluster.yaml
 
+# create cluster
 kubectl apply -f capi-cluster.yaml
 
 kubectl get cluster
@@ -63,9 +69,8 @@ clusterctl get kubeconfig capi-cluster > capi-cluster.kubeconfig
 
 ```
 
-## calico
-
 ```
+# calico
 kubectl --kubeconfig=./capi-cluster.kubeconfig \
   apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.24.1/manifests/calico.yaml
 
@@ -73,13 +78,11 @@ kubectl taint nodes --all node.cluster.x-k8s.io/uninitialized- --kubeconfig ./ca
 kubectl taint nodes --all node.cloudprovider.kubernetes.io/uninitialized- --kubeconfig ./capi-cluster.kubeconfig
 kubectl --kubeconfig=./capi-cluster.kubeconfig get nodes
 ```
-
-## delete cluster
 ```
+# delete cluster
 kubectl delete cluster capi-cluster
 
 ```
-
 
 ```
 # https://aws.amazon.com/blogs/containers/exposing-kubernetes-applications-part-3-nginx-ingress-controller/
