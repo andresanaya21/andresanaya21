@@ -85,7 +85,8 @@ kubectl delete cluster capi-cluster
 ```
 
 ```
-# https://aws.amazon.com/blogs/containers/exposing-kubernetes-applications-part-3-nginx-ingress-controller/
+# reference: https://aws.amazon.com/blogs/containers/exposing-kubernetes-applications-part-3-nginx-ingress-controller/
+
 # download iam policy
 $ curl -o iam-policy.json https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/v2.4.7/docs/install/iam_policy.json
 
@@ -93,7 +94,7 @@ $ aws iam create-policy \
     --policy-name AWSLoadBalancerControllerIAMPolicy \
     --policy-document file://iam-policy.json
 
-# attach policy to role attached on instances cluster
+# attach policy to role attached on instances cluster - manual buy can be automated
 # aws load balancer controller
 $ helm repo add eks https://aws.github.io/eks-charts
 
