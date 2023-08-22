@@ -3,6 +3,8 @@ kind: Ingress
 metadata:
   name: ${NS}-ingress
   namespace: ${NS}
+#  annotations:
+#    external-dns.alpha.kubernetes.io/hostname: apps-ingress-c9961cd78af449bc.elb.eu-west-3.amazonaws.com
 spec:
   ingressClassName: nginx
   defaultBackend:
@@ -11,7 +13,7 @@ spec:
       port:
         name: svc-port
   rules:
-    - host: a.example.com
+    - host: my-app.tactile-test-dns.com
       http:
         paths:
           - path: /first
@@ -21,13 +23,13 @@ spec:
                 name: first
                 port:
                   name: svc-port
-    - host: b.example.com
-      http:
-        paths:
-          - path: /second
-            pathType: Prefix
-            backend:
-              service:
-                name: second
-                port:
-                  name: svc-port
+#    - host: b.example.com
+#      http:
+#        paths:
+#          - path: /second
+#            pathType: Prefix
+#            backend:
+#              service:
+#                name: second
+#                port:
+#                  name: svc-port

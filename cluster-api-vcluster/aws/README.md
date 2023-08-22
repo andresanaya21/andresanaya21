@@ -94,7 +94,7 @@ $ aws iam create-policy \
     --policy-name AWSLoadBalancerControllerIAMPolicy \
     --policy-document file://iam-policy.json
 
-# attach policy to role attached on instances cluster - manual buy can be automated
+# attach policy to role attached on instances cluster - manual but can be automated
 # aws load balancer controller
 $ helm repo add eks https://aws.github.io/eks-charts
 
@@ -106,7 +106,7 @@ $ kubectl apply -k "github.com/aws/eks-charts/stable/aws-load-balancer-controlle
 
 $ helm upgrade -i aws-load-balancer-controller eks/aws-load-balancer-controller -n kube-system --set clusterName=capi-cluster --kubeconfig capi-cluster.kubeconfig
 
-# install nginx ingress controller
+# install nginx ingress controller, modify the health check of https
 
 $ helm upgrade -i ingress-nginx ingress-nginx/ingress-nginx \
     --version 4.2.3 \
@@ -118,7 +118,7 @@ $ helm upgrade -i ingress-nginx ingress-nginx/ingress-nginx \
 $ SERVICE_NAME=first NS=apps envsubst < deploy-using-alb.yaml | kubectl --kubeconfig capi-cluster.kubeconfig  apply -f -
 $ SERVICE_NAME=second NS=apps envsubst < deploy-using-alb.yaml | kubectl--kubeconfig capi-cluster.kubeconfig  apply -f -
 $ SERVICE_NAME=error NS=apps envsubst < deploy-using-alb.yaml | kubectl --kubeconfig capi-cluster.kubeconfig  apply -f -
-$ NS=apps envsubst < ingress.yml | kubectl apply -f -
+$ NS=apps envsubst < ingress.yaml | kubectl --kubeconfig capi-cluster.kubeconfig apply -f -
 $ export NLB_URL=$(kubectl get -n kube-system service/ingress-nginx-controller \
     -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
 
