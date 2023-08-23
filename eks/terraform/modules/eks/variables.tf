@@ -14,6 +14,18 @@ variable "vpc_id" {
   description = "The existing VPC"
 }
 
+variable "private_access" {
+  description = "enable private access to eks cluster"
+  type = bool
+  default = true
+}
+
+variable "public_access" {
+  description = "enable private access to eks cluster"
+  type = bool
+  default = false
+}
+
 variable "worker_subnet_ids" {
   type        = list(any)
   description = "the subnets where to deploy EKS"

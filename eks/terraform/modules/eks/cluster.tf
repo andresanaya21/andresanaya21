@@ -38,6 +38,8 @@ resource "aws_eks_cluster" "cluster" {
   vpc_config {
     subnet_ids = var.worker_subnet_ids
     security_group_ids = [aws_security_group.cluster.id]
+    endpoint_public_access = var.public_access
+    endpoint_private_access = var.private_access
   }
   enabled_cluster_log_types = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
 }
