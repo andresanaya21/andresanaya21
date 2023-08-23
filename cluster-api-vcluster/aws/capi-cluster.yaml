@@ -29,16 +29,18 @@ metadata:
 spec:
   region: eu-west-3
   sshKeyName: discovery-ec2
+  bastion:
+    enabled: true
   network:
     vpc:
-      id: vpc-0acb88eb13a7fa6a6
+      id: vpc-0e9fbbd63a090909e
     subnets:
-      - id: subnet-01c529cc527673f79  #subnet private
-      - id: subnet-0983023ab6e6ce607  #subnet private
-      - id: subnet-03e3964ad839e51d0  #subnet private
-      - id: subnet-0b915276a465dc977  #subnet public
-      - id: subnet-07b7668aa0d30aa9b  #subnet public
-      - id: subnet-002148a13cf72ca66  #subnet public
+      - id: subnet-0917c1b0a3b3372e6  #subnet private
+      - id: subnet-06c9e1971e32a7319  #subnet private
+      - id: subnet-0e0fa156b6e98194d  #subnet private
+      - id: subnet-07a803679ba7f87bc  #subnet public
+      - id: subnet-0e4b929972f4d394b  #subnet public
+      - id: subnet-01ffc32056b5c5789  #subnet public
 ---
 apiVersion: controlplane.cluster.x-k8s.io/v1beta1
 kind: KubeadmControlPlane
@@ -58,11 +60,13 @@ spec:
       nodeRegistration:
         kubeletExtraArgs:
           cloud-provider: external
+          provider-id: aws:///'{{ ds.meta_data.instance_id }}'
         name: '{{ ds.meta_data.local_hostname }}'
     joinConfiguration:
       nodeRegistration:
         kubeletExtraArgs:
           cloud-provider: external
+          provider-id: aws:///'{{ ds.meta_data.instance_id }}'
         name: '{{ ds.meta_data.local_hostname }}'
   machineTemplate:
     infrastructureRef:
@@ -136,4 +140,5 @@ spec:
         nodeRegistration:
           kubeletExtraArgs:
             cloud-provider: external
+            provider-id: aws:///'{{ ds.meta_data.instance_id }}'
           name: '{{ ds.meta_data.local_hostname }}'

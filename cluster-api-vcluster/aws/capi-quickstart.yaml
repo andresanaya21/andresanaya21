@@ -30,6 +30,8 @@ metadata:
 spec:
   region: eu-west-3
   sshKeyName: discovery-ec2
+  bastion:
+    enabled: true
 ---
 apiVersion: controlplane.cluster.x-k8s.io/v1beta1
 kind: KubeadmControlPlane

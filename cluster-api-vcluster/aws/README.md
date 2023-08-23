@@ -67,6 +67,10 @@ kubectl get machine
 
 clusterctl get kubeconfig capi-cluster > capi-cluster.kubeconfig
 
+# get ip bastion host - if configured -
+kubectl get awscluster
+
+
 ```
 
 ```
