@@ -13,7 +13,7 @@ jobs:
  
    - name: echo
      run: |
-       echo "starting test"
+       echo "### starting test ###"
        export TEST=$(hostname)
        echo "This test was executed in $TEST"
 
