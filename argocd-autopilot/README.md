@@ -59,3 +59,8 @@ argocd-autopilot app create cert-manager --app github.com/andresanaya21/andresan
 argocd-autopilot app create cert-manager --app github.com/andresanaya21/andresanaya21/cert-manager/ -p cluster-addons --type dir
 
 ```
+
+## uninstall argocd-autopilot
+```
+argocd-autopilot repo uninstall
+```
