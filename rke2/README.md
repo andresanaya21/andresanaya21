@@ -61,6 +61,8 @@ tls-san:
 # add in /etc/hosts if not DNS
 10.0.130.239 my-cluster-domain.com
 
+# to add rke2 compatible with aws load balanacer
+curl -sfL https://get.rke2.io | INSTALL_RKE2_TYPE="server" INSTALL_RKE2_EXEC="--token secret --kubelet-arg="cloud-provider=external" --kubelet-arg="provider-id=aws:///$provider_id" --write-kubeconfig-mode=644 --node-name=$(hostname -f)" sh -
 
 # helm
 curl -L https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
