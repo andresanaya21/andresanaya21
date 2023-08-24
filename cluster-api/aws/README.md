@@ -84,6 +84,7 @@ kubectl --kubeconfig=./capi-cluster.kubeconfig get nodes
 ```
 ```
 # delete cluster
+# before delete, firstly ensure ingress controller deleted in cluster
 kubectl delete cluster capi-cluster
 
 ```
