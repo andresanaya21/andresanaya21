@@ -16,7 +16,7 @@ spec:
     directory:
       recurse: false
   sources: []
-  project: default
+  project: cluster-addons
   syncPolicy:
     automated: null
     syncOptions:
