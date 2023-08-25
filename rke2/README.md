@@ -100,6 +100,9 @@ metadata:
   namespace: metallb-system
  
 kubectl apply -f  ~/metallb/ipaddress_pools.yaml
+
+# ingress controller nginx
+$ helm upgrade --install ingress-nginx ingress-nginx -n ingress-nginx --create-namespace --repo https://kubernetes.github.io/ingress-nginx --set rbac.create=true --set controller.service.type=NodePort --set controller.service.nodePorts.http=32080 --set controller.service.nodePorts.https=32443 --set controller.extraArgs."enable-ssl-passthrough=true"
 ```
 ## RKE2 agent
 ```
