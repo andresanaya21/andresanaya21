@@ -1,4 +1,10 @@
 ```
+# aws cli
+
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+unzip awscliv2.zip
+sudo ./aws/install
+
 # clusterctl
 
 curl -L https://github.com/kubernetes-sigs/cluster-api/releases/download/v1.5.0/clusterctl-linux-amd64 -o clusterctl
@@ -25,7 +31,7 @@ export AWS_SESSION_TOKEN=<session-token> # If you are using Multi-Factor Auth.
 # The clusterawsadm utility takes the credentials that you set as environment
 # variables and uses them to create a CloudFormation stack in your AWS account
 # with the correct IAM resources.
-clusterawsadm bootstrap iam create-cloudformation-stack
+clusterawsadm bootstrap iam create-cloudformation-stack --region eu-west-3
 
 # Create the base64 encoded credentials using clusterawsadm.
 # This command uses your environment variables and encodes
