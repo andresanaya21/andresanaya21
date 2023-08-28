@@ -1,3 +1,5 @@
+# External Secrets
+```
 # helm repo add external-secrets https://charts.external-secrets.io
 
 helm install external-secrets \
@@ -21,3 +23,4 @@ kubectl create secret generic awssm-secret --from-file=./access-key --from-file=
 # k apply -f external-secret-secret-manager.yaml
 
 # k apply -f pod.yaml
+```
