@@ -70,6 +70,7 @@ clusterctl describe cluster capi-cluster --show-conditions KubeadmControlPlane
 kubectl get kubeadmcontrolplane
 kubectl describe kubeadmconfigtemplate
 kubectl get machine
+kubectl get machinedeployment
 
 clusterctl get kubeconfig capi-cluster > capi-cluster.kubeconfig
 
