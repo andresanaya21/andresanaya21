@@ -63,7 +63,7 @@ kubectl apply -f capi-cluster.yaml
 
 kubectl get cluster
 
-clusterctl describe cluster capi-cluster
+clusterctl describe cluster capi-cluster --v 10
 clusterctl describe cluster capi-cluster --echo
 clusterctl describe cluster capi-cluster --show-conditions KubeadmControlPlane
 
