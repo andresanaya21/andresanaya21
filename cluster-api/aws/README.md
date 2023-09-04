@@ -71,6 +71,9 @@ kubectl get kubeadmcontrolplane
 kubectl describe kubeadmconfigtemplate
 kubectl get machine
 kubectl get machinedeployment
+ktail -n capi-kubeadm-bootstrap-system -sT
+ktail -n capi-kubeadm-control-plane-system -sT
+ktail -n capi-system -sT
 
 clusterctl get kubeconfig capi-cluster > capi-cluster.kubeconfig
 
