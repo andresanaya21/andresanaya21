@@ -24,7 +24,7 @@ spec:
     port: 0
   helmRelease:
     chart:
-      name: cluster-k8s-advanced
+      name: k8s
       repo: null
       version: null
     values: |-

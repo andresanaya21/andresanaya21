@@ -24,7 +24,7 @@ spec:
     port: 0
   helmRelease:
     chart:
-      name: vcluster-k8s
+      name: k8s
       repo: null
       version: null
     values: |-
