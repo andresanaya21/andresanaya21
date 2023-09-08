@@ -44,4 +44,15 @@ kubectl get pods -A--kubeconfig my-cluster.kubeconfig
 
 # delete cluster
 kubectl delete cluster my-cluster -n vcluster
+or 
+kubectl -f cluster/cluster-default.yaml
+```
+
+## OneKE
+- if using oneke as cluster mgmt. Deploy it without addons traefik and longhorn. You can deploy addons manually.
+
+## references
+```
+https://github.com/loft-sh/vcluster/tree/main/charts
+https://github.com/loft-sh/cluster-api-provider-vcluster
 ```

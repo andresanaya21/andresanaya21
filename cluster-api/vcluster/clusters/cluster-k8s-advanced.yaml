@@ -40,9 +40,6 @@ spec:
           enabled: true
         ingresses:
           enabled: true
-        nodes:
-          enabled: true
-          syncAllNodes: true
       syncer:
         replicas: 2
       etcd:
@@ -55,4 +52,4 @@ spec:
         enabled: true
         ingressClassName: nginx
         host: cluster-k8s-advanced.tactile.int
-  kubernetesVersion: 1.27.3
+#  kubernetesVersion: 1.27.3
