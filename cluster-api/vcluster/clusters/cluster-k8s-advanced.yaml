@@ -1,22 +1,22 @@
 apiVersion: cluster.x-k8s.io/v1beta1
 kind: Cluster
 metadata:
-  name: my-cluster-k3s
+  name: my-cluster-ha
   namespace: vcluster
 spec:
   controlPlaneRef:
     apiVersion: infrastructure.cluster.x-k8s.io/v1alpha1
     kind: VCluster
-    name: my-cluster-k3s
+    name: my-cluster-ha
   infrastructureRef:
     apiVersion: infrastructure.cluster.x-k8s.io/v1alpha1
     kind: VCluster
-    name: my-cluster-k3s
+    name: my-cluster-ha
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1alpha1
 kind: VCluster
 metadata:
-  name: my-cluster-k3s
+  name: my-cluster-ha
   namespace: vcluster
 spec:
   controlPlaneEndpoint:
@@ -24,11 +24,11 @@ spec:
     port: 0
   helmRelease:
     chart:
-     # by default install k3s distribution
-      name: null
+      name: cluster-k8s-advanced
       repo: null
       version: null
     values: |-
+      enableHA: true
       service:
         type: LoadBalancer
       sync:
@@ -36,4 +36,17 @@ spec:
           enabled: true
         ingresses:
           enabled: true
+        nodes:
+          enabled: true
+          syncAllNodes: true
+      syncer:
+        replicas: 2
+      etcd:
+        replicas: 2
+      api:
+        replicas: 2
+      controller:
+        replicas: 2
+      ingress:
+        enabled: true
   kubernetesVersion: 1.27.3
