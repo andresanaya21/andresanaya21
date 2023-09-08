@@ -1,22 +1,22 @@
 apiVersion: cluster.x-k8s.io/v1beta1
 kind: Cluster
 metadata:
-  name: my-cluster-ha
+  name: cluster-k8s-advanced
   namespace: vcluster
 spec:
   controlPlaneRef:
     apiVersion: infrastructure.cluster.x-k8s.io/v1alpha1
     kind: VCluster
-    name: my-cluster-ha
+    name: cluster-k8s-advanced
   infrastructureRef:
     apiVersion: infrastructure.cluster.x-k8s.io/v1alpha1
     kind: VCluster
-    name: my-cluster-ha
+    name: cluster-k8s-advanced
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1alpha1
 kind: VCluster
 metadata:
-  name: my-cluster-ha
+  name: cluster-k8s-advanced
   namespace: vcluster
 spec:
   controlPlaneEndpoint:
