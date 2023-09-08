@@ -32,6 +32,10 @@ spec:
       service:
         type: LoadBalancer
       sync:
+        services:
+          enabled: true
+        configmaps:
+          enabled: true
         persistentvolumeclaims:
           enabled: true
         ingresses:
