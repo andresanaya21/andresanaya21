@@ -49,4 +49,6 @@ spec:
         replicas: 2
       ingress:
         enabled: true
+        ingressClassName: nginx
+        host: cluster-k8s-advanced.tactile.int
   kubernetesVersion: 1.27.3
