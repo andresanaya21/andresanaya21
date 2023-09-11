@@ -14,6 +14,9 @@ curl -L -o vcluster "https://github.com/loft-sh/vcluster/releases/latest/downloa
 # using provider vcluster
 clusterctl init --infrastructure vcluster
 
+# check installation
+$ kubectl -n capi-system get pods
+
 # export variables
 
 git clone https://github.com/loft-sh/vcluster.git

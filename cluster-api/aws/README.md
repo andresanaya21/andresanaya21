@@ -40,6 +40,9 @@ export AWS_B64ENCODED_CREDENTIALS=$(clusterawsadm bootstrap credentials encode-a
 
 # Finally, initialize the management cluster
 clusterctl init --infrastructure aws
+
+# check installation
+$ kubectl -n capa-system get pods
 ```
 
 ```
