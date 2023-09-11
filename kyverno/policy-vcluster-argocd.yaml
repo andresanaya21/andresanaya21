@@ -54,7 +54,7 @@ spec:
             argocd.argoproj.io/secret-type: cluster # (10)
         stringData: # (11)
           name: "{{ vclusterName }}"
-          server: "https://{{ vclusterName }}.{{ namespace }}:443" # (12)
+          server: "https://{{ vclusterName }}.tactile.int:443" # (12)
           config: |
             {
               "tlsClientConfig": {
