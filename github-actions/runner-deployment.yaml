@@ -4,7 +4,7 @@ metadata:
  name: k8s-action-runner
  namespace: actions-runner-system
 spec:
- replicas: 2
+ replicas: 3
  template:
    spec:
-     repository: andresanaya21/iac
+     repository: andresanaya21/provisioning
