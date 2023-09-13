@@ -5,10 +5,9 @@ on:
       - main
 
 jobs:
-
   download_helm:
     name: dowload helm chart
-    run-on: self-hosted
+    runs-on: self-hosted
     steps:
     - name: Checkout
       uses: actions/checkout@v3
