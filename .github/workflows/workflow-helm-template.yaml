@@ -5,6 +5,7 @@ on:
       - main
   workflow_call:
 
+jobs:
   download_helm:
     name: dowload helm chart
     run-on: self-hosted
