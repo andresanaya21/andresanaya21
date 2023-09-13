@@ -1,0 +1,17 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: whoami
+  namespace: argocd
+spec:
+  destination:
+    namespace: whoami
+    server: https://cluster-0.cluster-0:443
+  project: default
+  source:
+    path: rke2/kustomization/overlays/
+    repoURL: https://github.com/andresanaya21/andresanaya21.git
+    targetRevision: main
+  syncPolicy:
+    automated:
+      prune: true
