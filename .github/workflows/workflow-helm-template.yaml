@@ -1,35 +1,35 @@
-name: helm template
-on: 
-  push:
-    branches:
-      - main
-  workflow_call:
-
-jobs:
-  download_helm:
-    name: dowload helm chart
-    run-on: self-hosted
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v3
-      with:
-        repository: 'andresanaya21/andresanaya21'
-        ref: ${{ github.head_ref }}
-        fetch-depth: 0
-        token: ${{ secrets.ACCESS_TOKEN }}
-
-    - name: Info runner
-      run: |
-       echo "### starting workflow ###"
-       export TEST=$(hostname)
-       echo "This test was executed in $TEST"
-
-    - name: install dependencies
-      run: |
-        curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
-  
-    - name: k8s manifest security/cert-manager
-      run: |
-        mkdir cert-manager/terrascan
-        helm template  jetstack/cert-manager --set installCRDs=true > \
-        cert-manager/terrascan/manifest.yaml
+#name: helm template
+#on: 
+#  push:
+#    branches:
+#      - main
+#  workflow_call:
+#
+#jobs:
+#  download_helm:
+#    name: dowload helm chart
+#    run-on: self-hosted
+#    steps:
+#    - name: Checkout
+#      uses: actions/checkout@v3
+#      with:
+#        repository: 'andresanaya21/andresanaya21'
+#        ref: ${{ github.head_ref }}
+#        fetch-depth: 0
+#        token: ${{ secrets.ACCESS_TOKEN }}
+#
+#    - name: Info runner
+#      run: |
+#       echo "### starting workflow ###"
+#       export TEST=$(hostname)
+#       echo "This test was executed in $TEST"
+#
+#    - name: install dependencies
+#      run: |
+#        curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+#  
+#    - name: k8s manifest security/cert-manager
+#      run: |
+#        mkdir cert-manager/terrascan
+#        helm template  jetstack/cert-manager --set installCRDs=true > \
+#        cert-manager/terrascan/manifest.yaml
