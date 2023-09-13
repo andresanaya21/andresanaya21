@@ -1,0 +1,37 @@
+name: securiry scanning
+on: 
+  push:
+    branches:
+      - main
+
+permissions:
+  pull-requests: write
+
+jobs:
+  terrascan_job:
+    runs-on: self-hosted
+    name: terrascan-action
+    steps:
+
+    - name: helm template
+      uses: andresanaya21/andresanaya21/.github/workflows/workflow-helm-template.yaml@main
+
+    - name: Run Terrascan
+      id: terrascan
+      uses: tenable/terrascan-action@main
+      with:
+        iac_type: 'k8s'
+        iac_version: 'v14'
+        policy_type: 'k8s'
+        only_warn: true
+        sarif_upload: true
+        iac_dir: cert-manager/terrascan
+        #non_recursive:
+        #policy_path:
+        #skip_rules:
+        #config_path:
+
+    - name: Upload SARIF file
+      uses: github/codeql-action/upload-sarif@v1
+      with:
+        sarif_file: terrascan.sarif
