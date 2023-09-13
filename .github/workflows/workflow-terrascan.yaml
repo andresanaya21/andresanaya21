@@ -53,7 +53,6 @@ jobs:
       uses: tenable/terrascan-action@main
       with:
         iac_type: 'k8s'
-        iac_version: 'v14'
         policy_type: 'k8s'
         only_warn: true
         sarif_upload: true
