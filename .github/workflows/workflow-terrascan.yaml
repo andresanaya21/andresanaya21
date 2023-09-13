@@ -35,7 +35,7 @@ jobs:
 #        cert-manager/terrascan/manifest.yaml
 
   terrascan_job:
-    needs: download_helm
+#    needs: download_helm
     runs-on: self-hosted
     name: terrascan-action
     steps:
@@ -47,7 +47,7 @@ jobs:
         ref: ${{ github.head_ref }}
         fetch-depth: 0
         token: ${{ secrets.ACCESS_TOKEN }}
-        
+
     - name: Run Terrascan
       id: terrascan
       uses: tenable/terrascan-action@main
