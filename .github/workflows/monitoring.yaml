@@ -3,10 +3,9 @@ on:
   push:
     branches:
       - main
-
-jobs:
-  security:
-    name: security
+jobs:   
+  monitoring:
+    name: monitoring
     runs-on: self-hosted
     steps:
     - name: pulling repository
@@ -16,7 +15,7 @@ jobs:
         ref: ${{ github.head_ref }}
         fetch-depth: 0
         token: ${{ secrets.ACCESS_TOKEN }}
-
+ 
     - name: Info runner
       run: |
        echo "### starting workflow ###"
@@ -27,34 +26,40 @@ jobs:
       run: |
         curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
 
-    - name: folder terrascan security
+    - name: folder terrascan monitoring
       run: |
-        mkdir -p security/terrascan
+        mkdir monitoring/terrascan
 
-    - name: k8s manifest security/cert-manager
+    - name: k8s manifest monitoring/grafana
       run: |
-        helm repo add jetstack https://charts.jetstack.io
-        helm template  jetstack/cert-manager --set installCRDs=true > \
-        security/terrascan/manifest-cert-manager.yaml
+        helm repo add grafana https://grafana.github.io/helm-charts
+        helm template grafana/grafana  > \
+        monitoring/terrascan/manifest-grafana.yaml
 
-    - name: artifact manifiest security
+    - name: k8s manifest monitoring/prometheus
+      run: |
+        helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+        helm template prometheus-community/kube-prometheus-stack > \
+        monitoring/terrascan/manifest-prometheus.yaml
+
+    - name: artifact manifiests monitoring
       uses: actions/upload-artifact@master
       with:
-        name: manifests-security
-        path: security/terrascan/
-
-  terrascan_security:
-    needs: security
+        name: manifests-monitoring
+        path: monitoring/terrascan
+        
+  terrascan_monitoring:
+    needs: monitoring
     runs-on: self-hosted
     name: terrascan-action
     steps:
-    - name: artifact 
+    - name: artifact
       uses: actions/download-artifact@master
       with:
-        name: manifests-security
-        path: security/terrascan/
+        name: manifests-monitoring
+        path: monitoring/terrascan
 
-    - name: Run Terrascan security
+    - name: Run Terrascan monitoring
       id: terrascan
       uses: tenable/terrascan-action@main
       with:
@@ -62,13 +67,13 @@ jobs:
         policy_type: 'k8s'
         only_warn: true
         sarif_upload: true
-        iac_dir: security/terrascan
+        iac_dir: monitoring/terrascan
         #non_recursive:
         #policy_path:
         #skip_rules:
         #config_path:
 
-    - name: Upload SARIF file security
+    - name: Upload SARIF file monitoring
       uses: github/codeql-action/upload-sarif@v2
       with:
-        sarif_file: terrascan_security.sarif
+        sarif_file: terrascan_monitoring.sarif
