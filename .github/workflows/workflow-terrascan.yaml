@@ -1,4 +1,4 @@
-name: securiry scanning
+name: securiry scanning security addons
 on: 
   push:
     branches:
@@ -71,4 +71,4 @@ jobs:
     - name: Upload SARIF file security
       uses: github/codeql-action/upload-sarif@v2
       with:
-        sarif_file: terrascan_security.sarif
+        sarif_file: terrascan.sarif
