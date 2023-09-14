@@ -1,21 +1,22 @@
-name: install dependencies
+name: dispatch
 on: 
+  workflow_dispatch:
+    inputs:
+      monitoring:
+        description: monitoring
+      terrascan_monitoring:
+        description: terrascan_monitoring
+      security:
+          description: security
+      terrascan_security:
+          description: terrascan_security
+      
   push:
     branches:
       - main
 jobs:   
   monitoring:
-    name: security vulns
-    runs-on: self-hosted
-    steps:
-    - name: Info runner
-      run: |
-       echo "### starting workflow ###"
-       export TEST=$(hostname)
-       echo "This test was executed in $TEST"
-       
-    - name: terrascan monitoring addons
-      uses: ./.github/workflows/monitoring.yaml@main
-
-    - name: terrascan security addons
-      uses: ./.github/workflows/security.yaml@main
+    uses: andresanaya21/andresanaya21/.github/workflows/monitoring.yaml@main
+    with:
+      monitoring:
+      terrascan_monitoring:

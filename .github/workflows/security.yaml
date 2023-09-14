@@ -1,8 +1,9 @@
 name: securiry scanning to security addons
-on: 
-  push:
-    branches:
-      - main
+on:
+  workflow_call:
+#  push:
+#    branches:
+#      - main
 
 jobs:
   security:
@@ -26,9 +27,6 @@ jobs:
     - name: install dependencies
       run: |
         curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
-
-    - name: install dependencies
-      uses: ./.github/workflows/dependencies.yaml@main
 
     - name: folder terrascan security
       run: |
