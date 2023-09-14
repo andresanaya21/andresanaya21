@@ -1,6 +1,7 @@
 name: securiry scanning to monitoring addons
 on:
   workflow_call:
+        
 #  push:
 #    branches:
 #      - main

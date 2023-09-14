@@ -1,22 +1,8 @@
 name: dispatch
-on: 
-  workflow_dispatch:
-    inputs:
-      monitoring:
-        description: monitoring
-      terrascan_monitoring:
-        description: terrascan_monitoring
-      security:
-          description: security
-      terrascan_security:
-          description: terrascan_security
-      
+on:       
   push:
     branches:
       - main
 jobs:   
   monitoring:
     uses: andresanaya21/andresanaya21/.github/workflows/monitoring.yaml@main
-    with:
-      monitoring:
-      terrascan_monitoring:
