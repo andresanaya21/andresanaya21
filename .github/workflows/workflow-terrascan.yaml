@@ -9,7 +9,7 @@ jobs:
     name: dowload helm chart
     runs-on: self-hosted
     steps:
-    - name: Checkout
+    - name: pulling repository
       uses: actions/checkout@v3
       with:
         repository: 'andresanaya21/andresanaya21'
@@ -34,10 +34,11 @@ jobs:
         helm template  jetstack/cert-manager --set installCRDs=true > \
         cert-manager/terrascan/manifest.yaml
 
-    - uses: actions/upload-artifact@master
+    - name: artifac manifiest
+      uses: actions/upload-artifact@master
       with:
         name: manifest
-        path: cert-manager/terrascan/manifest.yaml
+        path: cert-manager/terrascan/
 
   terrascan_job:
     needs: download_helm
@@ -56,7 +57,7 @@ jobs:
     - uses: actions/download-artifact@master
       with:
         name: manifest
-        path: cert-manager/terrascan/manifest.yaml
+        path: cert-manager/terrascan/
     - name: Run Terrascan
       id: terrascan
       uses: tenable/terrascan-action@main
