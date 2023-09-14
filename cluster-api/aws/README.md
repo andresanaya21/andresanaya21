@@ -7,7 +7,7 @@ sudo ./aws/install
 
 # clusterctl
 
-curl -L https://github.com/kubernetes-sigs/cluster-api/releases/download/v1.5.0/clusterctl-linux-amd64 -o clusterctl
+curl -L https://github.com/kubernetes-sigs/cluster-api/releases/download/v1.5.1/clusterctl-linux-amd64 -o clusterctl
 
 sudo install -o root -g root -m 0755 clusterctl /usr/local/bin/clusterctl
 
@@ -76,7 +76,7 @@ kubectl get machine
 kubectl get machinedeployment
 ktail -n capi-kubeadm-bootstrap-system -sT
 ktail -n capi-kubeadm-control-plane-system -sT
-ktail -n capi-system -sT
+ktail -n capa-system -sT
 
 clusterctl get kubeconfig capi-cluster > capi-cluster.kubeconfig
 
