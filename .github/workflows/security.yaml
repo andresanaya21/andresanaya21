@@ -1,13 +1,16 @@
 name: securiry scanning to security addons
 on:
   workflow_call:
+    secrets:
+      ACCESS_TOKEN:
+          required: true
 #  push:
 #    branches:
 #      - main
 
 jobs:
   security:
-    name: security
+    name: creating_manifiests
     runs-on: self-hosted
     steps:
     - name: pulling repository

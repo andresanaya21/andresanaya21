@@ -10,7 +10,7 @@ on:
 #      - main
 jobs:
   monitoring:
-    name: monitoring
+    name: creating_manifiests
     runs-on: self-hosted
     steps:
     - name: pulling repository
