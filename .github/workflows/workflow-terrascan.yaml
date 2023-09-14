@@ -1,4 +1,4 @@
-name: securiry scanning security addons
+name: securiry scanning to security addons
 on: 
   push:
     branches:
