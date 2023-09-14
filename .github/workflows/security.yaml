@@ -5,21 +5,7 @@ on:
       - main
 
 jobs:
-
-  install_dependencies:
-    name: dependencies
-    runs-on: self-hosted
-    steps:
-    - name: pulling repository
-      uses: actions/checkout@v3
-      with:
-        repository: 'andresanaya21/andresanaya21'
-        ref: ${{ github.head_ref }}
-        fetch-depth: 0
-        token: ${{ secrets.ACCESS_TOKEN }}
-
   security:
-    needs: install_dependencies
     name: security
     runs-on: self-hosted
     steps:
@@ -31,15 +17,15 @@ jobs:
         fetch-depth: 0
         token: ${{ secrets.ACCESS_TOKEN }}
 
-#    - name: Info runner
-#      run: |
-#       echo "### starting workflow ###"
-#       export TEST=$(hostname)
-#       echo "This test was executed in $TEST"
-#
-#    - name: install dependencies
-#      run: |
-#        curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+    - name: Info runner
+      run: |
+       echo "### starting workflow ###"
+       export TEST=$(hostname)
+       echo "This test was executed in $TEST"
+
+    - name: install dependencies
+      run: |
+        curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
 
     - name: install dependencies
       uses: ./.github/workflows/dependencies.yaml@main
