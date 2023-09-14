@@ -1,4 +1,4 @@
-name: dispatch
+name: security-vulns
 on:       
   push:
     branches:
