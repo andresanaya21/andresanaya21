@@ -1,15 +1,15 @@
-name: security-vulns
-on:       
-  push:
-    branches:
-      - main
-jobs:   
-  monitoring:
-    uses: andresanaya21/andresanaya21/.github/workflows/monitoring.yaml@main
-    secrets:
-      ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
-
-  security:
-    uses: andresanaya21/andresanaya21/.github/workflows/security.yaml@main
-    secrets:
-      ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+#name: security-vulns
+#on:       
+#  push:
+#    branches:
+#      - main
+#jobs:   
+#  monitoring:
+#    uses: andresanaya21/andresanaya21/.github/workflows/monitoring.yaml@main
+#    secrets:
+#      ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+#
+#  security:
+#    uses: andresanaya21/andresanaya21/.github/workflows/security.yaml@main
+#    secrets:
+#      ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
