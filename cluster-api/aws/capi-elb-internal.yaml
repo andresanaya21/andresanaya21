@@ -1,0 +1,143 @@
+# this file install infra in aws (sgs, route-table, ec2, lb)
+# install 1 master (control plane), 1 node (worker) using an existent infra (vcp, igw, natgtw)
+# https://blog.scottlowe.org/2019/09/09/consuming-preexisting-aws-infrastructure-with-cluster-api/
+# https://techbloc.net/archives/4661
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: Cluster
+metadata:
+  name: capi-outpost
+  namespace: default
+spec:
+  clusterNetwork:
+    pods:
+      cidrBlocks:
+      - 192.168.0.0/16
+  controlPlaneRef:
+    apiVersion: controlplane.cluster.x-k8s.io/v1beta1
+    kind: KubeadmControlPlane
+    name: capi-outpost-control-plane
+  infrastructureRef:
+    apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
+    kind: AWSCluster
+    name: capi-outpost
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
+kind: AWSCluster
+metadata:
+  name: capi-outpost
+  namespace: default
+spec:
+  region: eu-west-3
+  controlPlaneLoadBalancer:
+    schema: Internal
+  sshKeyName: outpost-key
+  bastion:
+#    enabled: true
+  network:
+    vpc:
+      id: vpc-09dfbdee1025dc45e
+    subnets:
+      - id: subnet-0690f473ec5d974e6  #subnet private
+      - id: subnet-02d80e6fb1fe4a778  #subnet public
+  
+---
+apiVersion: controlplane.cluster.x-k8s.io/v1beta1
+kind: KubeadmControlPlane 
+metadata:
+  name: capi-outpost-control-plane
+  namespace: default
+spec:
+  kubeadmConfigSpec:
+    clusterConfiguration:
+      apiServer:
+        extraArgs:
+          cloud-provider: aws
+      controllerManager:
+        extraArgs:
+          cloud-provider: aws
+    initConfiguration:
+      nodeRegistration:
+        kubeletExtraArgs:
+          cloud-provider: aws
+         # provider-id: aws:///'{{ ds.meta_data.instance_id }}'
+        name: '{{ ds.meta_data.local_hostname }}'
+    joinConfiguration:
+      nodeRegistration:
+        kubeletExtraArgs:
+          cloud-provider: aws
+         # provider-id: aws:///'{{ ds.meta_data.instance_id }}'
+        name: '{{ ds.meta_data.local_hostname }}'
+  machineTemplate:
+    infrastructureRef:
+      apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
+      kind: AWSMachineTemplate
+      name: capi-outpost-control-plane
+  replicas: 1
+  version: v1.25.0
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
+kind: AWSMachineTemplate
+metadata:
+  name: capi-outpost-control-plane
+  namespace: default
+spec:
+  template:
+    spec:
+      iamInstanceProfile: control-plane.cluster-api-provider-aws.sigs.k8s.io
+      instanceType: c6id.2xlarge
+      sshKeyName: outpost-key
+      rootVolume:
+        size: 80
+---
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: MachineDeployment
+metadata:
+  name: capi-outpost-md-0
+  namespace: default
+spec:
+  clusterName: capi-outpost
+  replicas: 1
+  selector:
+    matchLabels: null
+  template:
+    spec:
+      bootstrap:
+        configRef:
+          apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
+          kind: KubeadmConfigTemplate
+          name: capi-outpost-md-0
+      clusterName: capi-outpost
+      infrastructureRef:
+        apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
+        kind: AWSMachineTemplate
+        name: capi-outpost-md-0
+      version: v1.25.0
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
+kind: AWSMachineTemplate
+metadata:
+  name: capi-outpost-md-0
+  namespace: default
+spec:
+  template:
+    spec:
+      iamInstanceProfile: nodes.cluster-api-provider-aws.sigs.k8s.io
+      instanceType: c6id.2xlarge
+      sshKeyName: outpost-key
+      rootVolume:
+        size: 80
+---
+apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
+kind: KubeadmConfigTemplate
+metadata:
+  name: capi-outpost-md-0
+  namespace: default
+spec:
+  template:
+    spec:
+      joinConfiguration:
+        nodeRegistration:
+          kubeletExtraArgs:
+            cloud-provider: aws
+           # provider-id: aws:///'{{ ds.meta_data.instance_id }}'
+          name: '{{ ds.meta_data.local_hostname }}'
