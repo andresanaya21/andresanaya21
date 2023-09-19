@@ -29,7 +29,10 @@ metadata:
 spec:
   region: eu-west-3
   controlPlaneLoadBalancer:
-    schema: Internal
+    scheme: internal
+    subnets:
+     - subnet-00d70c5676e2bd09a
+     - subnet-0f24e2422638c7b1f
   sshKeyName: outpost-key
   bastion:
 #    enabled: true
