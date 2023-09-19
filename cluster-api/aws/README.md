@@ -77,6 +77,8 @@ kubectl get machinedeployment
 ktail -n capi-kubeadm-bootstrap-system -sT
 ktail -n capi-kubeadm-control-plane-system -sT
 ktail -n capa-system -sT
+ktail -n capi-kubeadm-bootstrap-system -sT
+ktail -n capi-kubeadm-control-plane-system -sT
 
 clusterctl get kubeconfig capi-cluster > capi-cluster.kubeconfig
 

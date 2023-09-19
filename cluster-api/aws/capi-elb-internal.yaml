@@ -2,6 +2,31 @@
 # install 1 master (control plane), 1 node (worker) using an existent infra (vcp, igw, natgtw)
 # https://blog.scottlowe.org/2019/09/09/consuming-preexisting-aws-infrastructure-with-cluster-api/
 # https://techbloc.net/archives/4661
+
+# elb internal:
+# to use elb internal, cluster management must be accessible to internal elb.
+# you can apply elb internal like:
+# apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
+# kind: AWSCluster
+# metadata:
+#   name: my-cluster
+# spec:
+#   region: us-east-1
+#   controlPlaneLoadBalancer:
+#     scheme: internal
+#----------------------------------
+# or use AWSMachineTemplate
+# apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
+# kind: AWSMachineTemplate
+# metadata:
+#   name: my-machine-template
+# spec:
+#   template:
+#     spec:
+#       instanceType: t3.large
+#       iamInstanceProfile: "nodes.cluster-api-provider-aws.sigs.k8s.io"
+#       classicELBScheme: internal
+
 apiVersion: cluster.x-k8s.io/v1beta1
 kind: Cluster
 metadata:
@@ -29,7 +54,10 @@ metadata:
 spec:
   region: eu-west-3
   controlPlaneLoadBalancer:
-    schema: Internal
+    scheme: internal
+    subnets:
+     - subnet-00d70c5676e2bd09a
+     - subnet-0f24e2422638c7b1f
   sshKeyName: outpost-key
   bastion:
 #    enabled: true
