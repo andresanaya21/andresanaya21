@@ -13,4 +13,5 @@ locals {
   vpc_cidr = "10.0.0.0/16"
   vpc_name = "tf-vpc-outpost"
   ami = "ami-05b5a865c3579bbc4"
+  instance_type = "c6id.2xlarge"
 }

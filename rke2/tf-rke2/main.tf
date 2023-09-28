@@ -8,20 +8,43 @@ module "ec2_instance" {
     delete = "20m"
   }
 
-  for_each = toset(var.instance_names)
+#  for_each = var.multiple_instances
+  for_each = local.multiple_instances
 
   ami = local.ami
   name = each.key
-  instance_type = var.instance_type
+  instance_type = local.instance_type
   key_name = var.key_name
   monitoring = var.monitoring
   vpc_security_group_ids = [aws_security_group.rke2_cluster_sgs.id]
   subnet_id = aws_subnet.tf_outpost_subnet.id
   associate_public_ip_address = false
   iam_role_description = "IAM Role to EC2 intances"
+  create_iam_instance_profile = true
   iam_role_policies = {
     AmazonSSMManagedInstanceCore = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
   }
 
   tags = var.tags
+}
+
+output "ec2_length" {
+  value = length(module.ec2_instance)
+  
+}
+
+output "ec2_name" {
+  value = element(keys(module.ec2_instance),0)
+  
+}
+
+output "ec2_ami" {
+  value = [ for v in values(module.ec2_instance): v.ami ]
+  
+}
+
+output "private_ips" {
+#  value = [ for p in values(var.multiple_instances): p.private_ip ]
+  value = [ for p in values(local.multiple_instances): p.private_ip ]
+  
 }

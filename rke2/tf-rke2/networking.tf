@@ -37,16 +37,19 @@ resource "aws_subnet" "tf_outpost_subnet_lni" {
 }
 
 resource "aws_network_interface" "second_nic" {
+  count = length(local.list_private_ips)
   subnet_id = aws_subnet.tf_outpost_subnet_lni.id
-  private_ip  = "10.0.5.10"
+  private_ip  = local.list_private_ips[count.index]
   security_groups = [ module.security_group.security_group_id ]
   tags = var.tags
   
 }
 
 resource "aws_network_interface_attachment" "attach_second_nic" {
-  for_each = toset(([for k in module.ec2_instance : k.id ]))
-  instance_id          = each.key
-  network_interface_id = aws_network_interface.second_nic.id
+  count = length(local.list_ec2)
+  instance_id          = local.list_ec2[count.index]
+  network_interface_id = aws_network_interface.second_nic[count.index].id
   device_index         = 1
+
+  depends_on = [ module.ec2_instance ]
 }

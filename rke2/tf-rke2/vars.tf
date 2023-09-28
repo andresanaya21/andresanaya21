@@ -2,14 +2,7 @@ variable "instance_names" {
     type = list(string)
     description = "list of instances names"
 #    default = ["rke2-master-0","rk2-master-1","rke2-worker-0","rke2-worker-1"]
-    default = ["rke2-master-0"]
-  
-}
-
-variable "instance_type" {
-    type = string
-    description = "instance type"
-    default = "c6id.2xlarge"
+    default = ["rke2-master-0","rk2-master-1"]
   
 }
 variable "key_name" {
@@ -25,20 +18,20 @@ variable "monitoring" {
     default = true
 }
 
-variable "vpc_security_group_ids" {
-    type = list(string)
-    description = "list of sgs"
-    default = [""]
-  
-}
-
-variable "subnet_id" {
-    type = string
-    description = "subnet_id (outpost)"
-    default = "subnet-0690f473ec5d974e6"
-  
-}
-
+#variable "multiple_instances" {
+#    type = map(object({
+#      private_ip = string
+#    }))
+#    description = "instances"
+#    default = {
+#        rke2-master-0 = {
+#            private_ip = "10.0.5.10"
+#        }
+#        rke2-worker-0 = {
+#            private_ip = "10.0.5.11"
+#        }
+#    }
+#}
 variable "tags" {
     type = map(string)
     description = "set of tags"
@@ -46,19 +39,5 @@ variable "tags" {
       "owner" = "andres",
       "region" = "outpost"
     }
-  
-}
-
-variable "iam_role_name" {
-    type = string
-    description = "ssm role name to instance"
-    default = "SSMRoleInstance"
-  
-}
-
-variable "vpc_id" {
-    type = string
-    description = "vpc id"
-    default = "vpc-09dfbdee1025dc45e"
   
 }
