@@ -1,0 +1,8 @@
+
+- name: install rke2
+  hosts: masters
+
+  tasks:
+    - name: run task in master-0
+      import_role:
+        name: ansible-rke2
