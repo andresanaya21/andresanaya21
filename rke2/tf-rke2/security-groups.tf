@@ -4,6 +4,14 @@ resource "aws_security_group" "rke2_cluster_sgs" {
   vpc_id      = module.vpc.vpc_id
 
   ingress {
+    description      = "6443 TLS"
+    from_port        = 6443
+    to_port          = 6443
+    protocol         = "tcp"
+    cidr_blocks      = [local.vpc_cidr]
+  }
+
+  ingress {
     description      = "443 TLS"
     from_port        = 443
     to_port          = 443
@@ -11,6 +19,21 @@ resource "aws_security_group" "rke2_cluster_sgs" {
     cidr_blocks      = [local.vpc_cidr]
   }
 
+  ingress {
+    description      = "ICMP"
+    from_port        = -1
+    to_port          = -1
+    protocol         = "icmp"
+    cidr_blocks      = [local.vpc_cidr]
+  }
+
+    ingress {
+    description      = "22 SSH"
+    from_port        = 22
+    to_port          = 22
+    protocol         = "tcp"
+    cidr_blocks      = [local.vpc_cidr]
+  }
   egress {
     from_port        = 0
     to_port          = 0

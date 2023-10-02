@@ -20,6 +20,12 @@ module "ec2_instance" {
   associate_public_ip_address = false
   iam_role_description = "IAM Role to EC2 intances"
   create_iam_instance_profile = true
+  user_data =  <<-EOF
+               sudo snap install amazon-ssm-agent --classic
+               sudo snap list amazon-ssm-agent
+               sudo snap start amazon-ssm-agent
+               sudo snap services amazon-ssm-agent
+               EOF
   iam_role_policies = {
     AmazonSSMManagedInstanceCore = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
   }

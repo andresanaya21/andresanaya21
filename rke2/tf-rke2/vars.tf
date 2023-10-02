@@ -20,7 +20,7 @@ variable "multiple_instances" {
         rke2-master-0 = {
             private_ip = "10.0.5.10"
         }
-        rke2-worker-0 = {
+        rke2-master-1 = {
             private_ip = "10.0.5.11"
         }
     }
