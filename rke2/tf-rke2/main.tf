@@ -8,8 +8,7 @@ module "ec2_instance" {
     delete = "20m"
   }
 
-#  for_each = var.multiple_instances
-  for_each = local.multiple_instances
+  for_each = var.multiple_instances
 
   ami = local.ami
   name = each.key
@@ -44,7 +43,5 @@ output "ec2_ami" {
 }
 
 output "private_ips" {
-#  value = [ for p in values(var.multiple_instances): p.private_ip ]
-  value = [ for p in values(local.multiple_instances): p.private_ip ]
-  
+  value = [ for p in values(var.multiple_instances): p.private_ip ]  
 }
