@@ -1,0 +1,65 @@
+---
+# tasks file for ansible-rk2
+
+- name: stop firewall
+  ansible.builtin.systemd_service:
+    state: stopped
+    name: ufw
+
+- name: install nfs-common package
+  ansible.builtin.apt:
+    name: nfs-common
+    state: latest
+    update_cache: yes
+
+- name: Remove dependencies that are no longer required
+  ansible.builtin.apt:
+    autoremove: yes
+
+- name: create rke2 directory
+  ansible.builtin.file:
+    path: /etc/rancher/rke2/
+    state: directory
+    recurse: true
+    mode: '0755'
+
+- name: Change file ownership, group and permissions
+  ansible.builtin.file:
+    path: /etc/rancher/rke2/config.yaml
+    owner: root
+    group: root
+
+- name: get hostname
+  ansible.builtin.setup:
+    filter: ansible_hostname
+  register: result
+
+- name: adding content config.yaml
+  ansible.builtin.blockinfile:
+    path: /etc/rancher/rke2/config.yaml
+    block: |
+      token: my-shared-secret
+      tls-san:
+        - {{ nlb }}
+        - {{ result.ansible_facts.ansible_hostname }}
+
+- name: install rke2 master
+  ansible.builtin.command: curl -sfL https://get.rke2.io | sh -
+
+- name: enable rk2
+  ansible.builtin.systemd_service:
+    name: rke2-server.service
+    enabled: true
+
+- name: find kubectl 
+  ansible.builtin.find:
+      paths: "/var/lib/rancher/rke2/data/"
+      patterns: "kubectl"
+      recurse: yes
+  register: result
+
+- name: symbolic link kubectl 
+  ansible.builtin.find:
+      src: "{{ result.files[0].path }}"
+      dest: "/usr/local/bin/kubectl"
+      state: link
