@@ -1,6 +1,7 @@
 
 - name: install rke2
   hosts: masters
+  become: true
 
   tasks:
     - name: run task in master-0

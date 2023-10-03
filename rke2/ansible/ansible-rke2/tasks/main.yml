@@ -4,4 +4,4 @@
 - name: run task in master-0
   ansible.builtin.include_tasks:
     file: master-0.yml
-  when: inventory_hostname == groups[‘masters’][0]
+  when: inventory_hostname == groups['masters'][0]

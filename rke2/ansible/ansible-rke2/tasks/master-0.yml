@@ -2,15 +2,16 @@
 # tasks file for ansible-rk2
 
 - name: stop firewall
-  ansible.builtin.systemd_service:
+  ansible.builtin.systemd:
     state: stopped
     name: ufw
+  ignore_errors: true
 
 - name: install nfs-common package
   ansible.builtin.apt:
     name: nfs-common
     state: latest
-    update_cache: yes
+#    update_cache: yes
 
 - name: Remove dependencies that are no longer required
   ansible.builtin.apt:
@@ -23,12 +24,6 @@
     recurse: true
     mode: '0755'
 
-- name: Change file ownership, group and permissions
-  ansible.builtin.file:
-    path: /etc/rancher/rke2/config.yaml
-    owner: root
-    group: root
-
 - name: get hostname
   ansible.builtin.setup:
     filter: ansible_hostname
@@ -37,29 +32,40 @@
 - name: adding content config.yaml
   ansible.builtin.blockinfile:
     path: /etc/rancher/rke2/config.yaml
+    create: true
     block: |
       token: my-shared-secret
       tls-san:
         - {{ nlb }}
         - {{ result.ansible_facts.ansible_hostname }}
 
+- name: download RKE2 install script
+  get_url:
+    url: https://get.rke2.io
+    dest: /usr/local/bin/install-rke2.sh
+    mode: 0755
+    
 - name: install rke2 master
-  ansible.builtin.command: curl -sfL https://get.rke2.io | sh -
+  ansible.builtin.shell: |
+     bash /usr/local/bin/install-rke2.sh
 
-- name: enable rk2
-  ansible.builtin.systemd_service:
+- name: enable and start rk2
+  ansible.builtin.systemd:
     name: rke2-server.service
     enabled: true
+    state: started
 
-- name: find kubectl 
+- name: find kubectl file
   ansible.builtin.find:
-      paths: "/var/lib/rancher/rke2/data/"
-      patterns: "kubectl"
-      recurse: yes
-  register: result
+    paths: /var/lib/rancher/rke2/data/
+    patterns: kubectl
+    file_type: file
+    recurse: yes
+  register: kubectl_path
 
-- name: symbolic link kubectl 
-  ansible.builtin.find:
-      src: "{{ result.files[0].path }}"
-      dest: "/usr/local/bin/kubectl"
-      state: link
+- name: create a symbolic link for kubectl
+  ansible.builtin.file:
+    path: /usr/local/bin/kubectl
+    src: "{{ kubectl_path.files[0].path }}"
+    state: link
+    force: yes
