@@ -6,3 +6,4 @@ rke2-master-1 ansible_connection=ssh ansible_user=ubuntu ansible_ssh_private_key
 [wokers]
 
 [local]
+localhost  ansible_connection=local
