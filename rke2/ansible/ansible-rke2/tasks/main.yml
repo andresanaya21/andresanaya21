@@ -5,3 +5,9 @@
   ansible.builtin.include_tasks:
     file: master-0.yml
   when: inventory_hostname == groups['masters'][0]
+
+- name: add new master to the cluster
+  ansible.builtin.include_tasks:
+    file: masters.yml
+  loop: "{{ groups['masters'][0:] }}"
+  delegate_to: "{{ item }}"

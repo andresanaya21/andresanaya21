@@ -47,7 +47,7 @@
     
 - name: install rke2 master
   ansible.builtin.shell: |
-     bash /usr/local/bin/install-rke2.sh
+     bash sudo /usr/local/bin/install-rke2.sh
 
 - name: enable and start rk2
   ansible.builtin.systemd:
