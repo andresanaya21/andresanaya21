@@ -25,6 +25,23 @@ resource "aws_subnet" "tf_outpost_subnet" {
   }
 }
 
+# Create a route table
+resource "aws_route_table" "rtb" {
+  vpc_id = module.vpc.vpc_id
+
+  # Create a route to the Internet gateway
+  route {
+    cidr_block = "0.0.0.0/0"
+    nat_gateway_id  = module.vpc.natgw_ids[0]
+  }
+}
+
+# Associate the route table with the subnet
+resource "aws_route_table_association" "rta" {
+  subnet_id      = aws_subnet.tf_outpost_subnet.id
+  route_table_id = aws_route_table.rtb.id
+}
+
 resource "aws_subnet" "tf_outpost_subnet_lni" {
   vpc_id     = module.vpc.vpc_id
   cidr_block = "10.0.5.0/24"
