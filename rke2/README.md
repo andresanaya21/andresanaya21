@@ -10,8 +10,9 @@
 2. Deploy RKE2 software in ec2 instances
 
 ### 1. Deploy infraestructure using terraform:
-- EC2 (instances, network load balancer, target groups, listeners)
-- VPC (internet gateway, nat gateway, security groups, rules, subnets)
+- Resources to deploy:
+  - EC2 (instances, network load balancer, target groups, listeners)
+  - VPC (internet gateway, nat gateway, security groups, rules, subnets)
 
 #### Procedure
 
