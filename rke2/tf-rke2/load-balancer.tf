@@ -27,6 +27,8 @@ resource "aws_security_group" "nlb_sg" {
     to_port     = 0
     cidr_blocks = ["0.0.0.0/0"]
   }
+
+  tags = var.tags
 }
 
 # Create a network load balancer and attach it to the public subnets and security group
@@ -36,6 +38,8 @@ resource "aws_lb" "nlb" {
   load_balancer_type = "network"
   subnets            = module.vpc.private_subnets
   security_groups    = [aws_security_group.nlb_sg.id]
+
+  tags = var.tags
 }
 
 # Create a target group for the network load balancer and register the EC2 instances as targets
@@ -48,6 +52,8 @@ resource "aws_lb_target_group" "nlb_tg" {
   # Use instance ID as target type
   target_type = "instance"
 
+  tags = var.tags
+
 }
 resource "aws_lb_target_group" "nlb_tg_server" {
   name     = "nlb-tg-tf-server"
@@ -57,6 +63,8 @@ resource "aws_lb_target_group" "nlb_tg_server" {
 
   # Use instance ID as target type
   target_type = "instance"
+
+  tags = var.tags
 
 }
 
@@ -84,6 +92,8 @@ resource "aws_lb_listener" "nlb_listener" {
     type             = "forward"
     target_group_arn = aws_lb_target_group.nlb_tg.arn
   }
+
+  tags = var.tags
 }
 
 
@@ -96,4 +106,6 @@ resource "aws_lb_listener" "nlb_listener_server" {
     type             = "forward"
     target_group_arn = aws_lb_target_group.nlb_tg_server.arn
   }
+
+  tags = var.tags
 }

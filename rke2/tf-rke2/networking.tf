@@ -21,7 +21,8 @@ resource "aws_subnet" "tf_outpost_subnet" {
   availability_zone = "eu-west-3a"
 
   tags = {
-  "Name": "tf-outpost-${local.region}"
+  Name: "tf-outpost-${local.region}"
+  region: "outpost"
   }
 }
 
@@ -50,6 +51,7 @@ resource "aws_subnet" "tf_outpost_subnet_lni" {
 
   tags = {
     Name =  "tf-outpost-${local.region}-lni"
+    region = "outpost"
   }
 }
 
