@@ -15,7 +15,7 @@ variable "multiple_instances" {
     type = map(object({
       private_ip = string
     }))
-    description = "instances"
+    description = "include ec2 instances as the defautl format"
     default = {
         rke2-master-0 = {
             private_ip = "10.0.5.10"
