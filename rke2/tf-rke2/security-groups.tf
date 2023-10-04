@@ -27,10 +27,18 @@ resource "aws_security_group" "rke2_cluster_sgs" {
     cidr_blocks      = [local.vpc_cidr]
   }
 
-    ingress {
+  ingress {
     description      = "22 SSH"
     from_port        = 22
     to_port          = 22
+    protocol         = "tcp"
+    cidr_blocks      = [local.vpc_cidr]
+  }
+
+  ingress {
+    description      = "9345 TLS"
+    from_port        = 9345
+    to_port          = 9345
     protocol         = "tcp"
     cidr_blocks      = [local.vpc_cidr]
   }
