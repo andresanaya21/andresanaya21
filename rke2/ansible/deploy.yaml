@@ -1,9 +1,16 @@
 
-- name: install rke2
-  hosts: masters
+- name: master-0
+  hosts: masters[0]
   become: true
+  vars_files:
+       - common_vars.yaml
 
   tasks:
-    - name: run task in master-0
-      import_role:
-        name: ansible-rke2
+    - name: install rke2 in master-0
+      ansible.builtin.import_tasks: master-0.yml
+
+    - name: install rke2 in masters
+      ansible.builtin.import_tasks: masters.yml
+      
+    - name: install rke2 in workers
+      ansible.builtin.import_tasks: workers.yml

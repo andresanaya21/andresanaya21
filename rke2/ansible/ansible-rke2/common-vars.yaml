@@ -1,0 +1,3 @@
+---
+# defaults file for ansible-rk2
+nlb: nlb-tf-169ac1c0b6041d0c.elb.eu-west-3.amazonaws.com

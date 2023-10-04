@@ -1,0 +1,77 @@
+---
+# tasks file for ansible-rk2
+
+- name: stop firewall
+  ansible.builtin.systemd:
+    state: stopped
+    name: ufw
+  ignore_errors: true
+  loop: "{{ groups['masters'][1:] }}"
+  delegate_to: "{{ item }}"
+
+- name: install nfs-common package
+  ansible.builtin.apt:
+    name: nfs-common
+    state: latest
+  loop: "{{ groups['masters'][1:] }}"
+  delegate_to: "{{ item }}"
+
+- name: Remove dependencies that are no longer required
+  ansible.builtin.apt:
+    autoremove: yes
+  loop: "{{ groups['masters'][1:] }}"
+  delegate_to: "{{ item }}"
+
+- name: download RKE2 install script
+  get_url:
+    url: https://get.rke2.io
+    dest: /usr/local/bin/install-rke2.sh
+    mode: 0755
+  loop: "{{ groups['masters'][1:] }}"
+  delegate_to: "{{ item }}"
+
+- name: Get RKE2 node token
+  command: sudo cat /var/lib/rancher/rke2/server/token
+  register: token
+  run_once: true
+
+- name: create rke2 directory
+  ansible.builtin.file:
+    path: /etc/rancher/rke2/
+    state: directory
+    recurse: true
+    mode: '0755'
+  loop: "{{ groups['masters'][1:] }}"
+  delegate_to: "{{ item }}"
+
+- name: adding content config.yaml
+  ansible.builtin.blockinfile:
+    path: /etc/rancher/rke2/config.yaml
+    create: true
+    block: |
+      server: https://{{ hostvars[groups['masters'][0]]['ansible_host'] }}:9345
+      token: {{ token.stdout }}
+      tls-san:
+        - {{ nlb }}
+        - {{ hostvars[groups['masters'][0]]['ansible_host'] }}
+  loop: "{{ groups['masters'][1:] }}"
+  delegate_to: "{{ item }}"
+
+- name: install rke2 master
+  ansible.builtin.shell: |
+     INSTALL_RKE2_TYPE="server"
+     INSTALL_RKE2_EXEC="--token secret \
+     --kubelet-arg="cloud-provider=external" \
+     --kubelet-arg="provider-id=aws:///$provider_id" \
+     --write-kubeconfig-mode=644 --node-name=$(hostname -f)" 
+     bash /usr/local/bin/install-rke2.sh
+  loop: "{{ groups['masters'][1:] }}"
+  delegate_to: "{{ item }}"
+
+- name: enable and start rk2
+  ansible.builtin.systemd:
+    name: rke2-server.service
+    enabled: true
+    state: started
+  loop: "{{ groups['masters'][1:] }}"
+  delegate_to: "{{ item }}"
