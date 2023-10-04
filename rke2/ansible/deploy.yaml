@@ -3,7 +3,7 @@
   hosts: masters[0]
   become: true
   vars_files:
-       - common_vars.yaml
+       - common_vars.yml
 
   tasks:
     - name: install rke2 in master-0

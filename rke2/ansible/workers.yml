@@ -6,20 +6,20 @@
     state: stopped
     name: ufw
   ignore_errors: true
-  loop: "{{ groups['masters'][1:] }}"
+  loop: "{{ groups['workers'][0:] }}"
   delegate_to: "{{ item }}"
 
 - name: install nfs-common package
   ansible.builtin.apt:
     name: nfs-common
     state: latest
-  loop: "{{ groups['masters'][1:] }}"
+  loop: "{{ groups['workers'][0:] }}"
   delegate_to: "{{ item }}"
 
 - name: Remove dependencies that are no longer required
   ansible.builtin.apt:
     autoremove: yes
-  loop: "{{ groups['masters'][1:] }}"
+  loop: "{{ groups['workers'][0:] }}"
   delegate_to: "{{ item }}"
 
 - name: create rke2 directory
@@ -28,7 +28,7 @@
     state: directory
     recurse: true
     mode: '0755'
-  loop: "{{ groups['masters'][1:] }}"
+  loop: "{{ groups['workers'][0:] }}"
   delegate_to: "{{ item }}"
 
 - name: Get RKE2 node token
@@ -43,7 +43,7 @@
     block: |
       server: https://{{ nlb }}:9345
       token: {{ token.stdout }}
-  loop: "{{ groups['masters'][1:] }}"
+  loop: "{{ groups['workers'][0:] }}"
   delegate_to: "{{ item }}"
 
 - name: download RKE2 install script
@@ -51,7 +51,7 @@
     url: https://get.rke2.io
     dest: /usr/local/bin/install-rke2.sh
     mode: 0755
-  loop: "{{ groups['masters'][1:] }}"
+  loop: "{{ groups['workers'][0:] }}"
   delegate_to: "{{ item }}"
 
 
@@ -59,7 +59,7 @@
   ansible.builtin.shell: |
      INSTALL_RKE2_TYPE="agent" \
      bash /usr/local/bin/install-rke2.sh
-  loop: "{{ groups['masters'][1:] }}"
+  loop: "{{ groups['workers'][0:] }}"
   delegate_to: "{{ item }}"
 
 - name: enable and start rk2
@@ -67,5 +67,5 @@
     name: rke2-agent.service
     enabled: true
     state: started
-  loop: "{{ groups['masters'][1:] }}"
+  loop: "{{ groups['workers'][0:] }}"
   delegate_to: "{{ item }}"
