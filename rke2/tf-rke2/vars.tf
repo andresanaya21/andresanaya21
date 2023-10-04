@@ -23,6 +23,9 @@ variable "multiple_instances" {
         rke2-master-1 = {
             private_ip = "10.0.5.11"
         }
+        rke2-worker-0 = {
+            private_ip = "10.0.5.12"
+        }
     }
 }
 variable "tags" {
