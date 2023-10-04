@@ -3,10 +3,10 @@
 ## Dependencies
 - ansible
 - terraform
-- Outpost
+- AWS Outpost
 
 ## Steps:
-1. Deploy infraestructure using terraform:
+1. Deploy infrastructure using terraform
 2. Deploy RKE2 software in ec2 instances
 
 ### 1. Deploy infraestructure using terraform:
@@ -30,9 +30,9 @@
         }
 ```
 
-The code above means you will create three ec2 instances with name: `rke2-master-0, rke2-master-1, rke2-worker-0`.  The `privat_ip` dependes on the `locals.vpc_cidr` and the `aws_subnet.tf_outpost_subnet_lni`. These private ips will be atteched as internal subnet created in aws Outpost.
+Then the code above means you will create three ec2 instances with name: `rke2-master-0, rke2-master-1, rke2-worker-0`.  The `privat_ip` depends on the `locals.vpc_cidr` and the `aws_subnet.tf_outpost_subnet_lni`. These private ips will be atteched as internal subnet created in AWS Outpost.
 
-- Provides aws credentials in `tf-rke2/provider.tf`
+- Provides AWS credentials in `tf-rke2/provider.tf`
 - Create deployment using terraform
 
 ```
