@@ -1,12 +1,12 @@
 module "vpc" {
   source = "terraform-aws-modules/vpc/aws"
 
-  name = local.vpc_name
-  cidr = local.vpc_cidr
+  name = var.vpc_name
+  cidr = var.vpc_cidr
 
   azs             = local.azs
-  private_subnets =  [for k, v in local.azs : cidrsubnet(local.vpc_cidr, 8, k)]
-  public_subnets  =  [for k, v in local.azs : cidrsubnet(local.vpc_cidr, 8, k + 48)]
+  private_subnets =  [for k, v in local.azs : cidrsubnet(var.vpc_cidr, 8, k)]
+  public_subnets  =  [for k, v in local.azs : cidrsubnet(var.vpc_cidr, 8, k + 48)]
 
   enable_nat_gateway = true
   single_nat_gateway = true
@@ -16,8 +16,8 @@ module "vpc" {
 
 resource "aws_subnet" "tf_outpost_subnet" {
   vpc_id     = module.vpc.vpc_id
-  cidr_block = "10.0.4.0/24"
-  outpost_arn = "arn:aws:outposts:eu-west-3:050107717205:outpost/op-066d526775d892a1f"
+  cidr_block = var.cidr_block_snet_op_region
+  outpost_arn = local.outpost_arn
   availability_zone = "eu-west-3a"
 
   tags = {
@@ -45,8 +45,8 @@ resource "aws_route_table_association" "rta" {
 
 resource "aws_subnet" "tf_outpost_subnet_lni" {
   vpc_id     = module.vpc.vpc_id
-  cidr_block = "10.0.5.0/24"
-  outpost_arn = "arn:aws:outposts:eu-west-3:050107717205:outpost/op-066d526775d892a1f"
+  cidr_block = var.cidr_block_snet_op_local
+  outpost_arn = local.outpost_arn
   availability_zone = "eu-west-3a"
 
   tags = {
