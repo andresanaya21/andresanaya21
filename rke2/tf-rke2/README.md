@@ -70,10 +70,14 @@ No requirements.
 
 | Name | Description | Type | Default |
 |------|-------------|------|---------|
+| <a name="input_cidr_block_snet_op_local"></a> [cidr\_block\_snet\_op\_local](#input\_cidr\_block\_snet\_op\_local) | value of the cidr to the subnet created in the outpost. This subnet will be used to connect the instances to on-premise. Please keep in mind the var.vpc\_cidr variable | `string` | `"10.0.5.0/24"` |
+| <a name="input_cidr_block_snet_op_region"></a> [cidr\_block\_snet\_op\_region](#input\_cidr\_block\_snet\_op\_region) | value of the cidr to the subnet created in the outpost. This subnet will be used to connect the instances to region. Please keep in mind the var.vpc\_cidr variable | `string` | `"10.0.4.0/24"` |
 | <a name="input_key_name"></a> [key\_name](#input\_key\_name) | name of key | `string` | `"outpost-key"` |
 | <a name="input_monitoring"></a> [monitoring](#input\_monitoring) | true/false enabling monitoring | `bool` | `true` |
 | <a name="input_multiple_instances"></a> [multiple\_instances](#input\_multiple\_instances) | include ec2 instances as the defautl format | <pre>map(object({<br>      private_ip = string<br>    }))</pre> | <pre>{<br>  "rke2-master-0": {<br>    "private_ip": "10.0.5.10"<br>  },<br>  "rke2-master-1": {<br>    "private_ip": "10.0.5.11"<br>  },<br>  "rke2-worker-0": {<br>    "private_ip": "10.0.5.12"<br>  }<br>}</pre> |
-| <a name="input_tags"></a> [tags](#input\_tags) | set of tags | `map(string)` | <pre>{<br>  "owner": "andres",<br>  "region": "outpost"<br>}</pre> |
+| <a name="input_tags"></a> [tags](#input\_tags) | set of tags | `map(string)` | <pre>{<br>  "environment": "Outpost",<br>  "owner": "andres"<br>}</pre> |
+| <a name="input_vpc_cidr"></a> [vpc\_cidr](#input\_vpc\_cidr) | cird to vpc | `string` | `"10.0.0.0/16"` |
+| <a name="input_vpc_name"></a> [vpc\_name](#input\_vpc\_name) | name of vpc | `string` | `"tf-vpc-outpost"` |
 
 ## Outputs
 
@@ -83,4 +87,5 @@ No requirements.
 | <a name="output_ec2_length"></a> [ec2\_length](#output\_ec2\_length) | n/a |
 | <a name="output_ec2_name"></a> [ec2\_name](#output\_ec2\_name) | n/a |
 | <a name="output_private_ips"></a> [private\_ips](#output\_private\_ips) | n/a |
+| <a name="output_username"></a> [username](#output\_username) | n/a |
 <!-- END_TF_DOCS -->

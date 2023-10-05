@@ -51,3 +51,7 @@ output "ec2_ami" {
 output "private_ips" {
   value = [ for p in values(var.multiple_instances): p.private_ip ]  
 }
+
+output "username" {
+  value = local.username
+}

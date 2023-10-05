@@ -59,6 +59,7 @@ variable "tags" {
     type = map(string)
     description = "set of tags"
     default = {
+        owner = "andres"
         environment = "Outpost"
     }
   
