@@ -16,21 +16,30 @@
 
 #### Procedure
 
-- modify the `tf-rke2/vars.tf`. `multiple_instances` variable is a object dict. If you have:
+- modify the `tf-rke2/vars.tf`. `masters` and `workers` variables are a object dict. If you have:
 
 ```
-        rke2-master-0 = {
-            private_ip = "10.0.5.10"
-        }
-        rke2-master-1 = {
-            private_ip = "10.0.5.11"
-        }
-        rke2-worker-0 = {
-            private_ip = "10.0.5.12"
-        }
+# masters
+    rke2-master-0 = {
+        private_ip = "10.0.5.10"
+    }
+    rke2-master-1 = {
+        private_ip = "10.0.5.11"
+    }
+    rke2-worker-0 = {
+        private_ip = "10.0.5.12"
+    }
+
+# workers
+    "rke2-worker-0" = {
+      private_ip = "10.0.5.12"
+    }
+    "rke2-worker-1" = {
+      private_ip = "10.0.5.13"
+    }
 ```
 
-Then the code above means you will create three ec2 instances with name: `rke2-master-0, rke2-master-1, rke2-worker-0`.  The `privat_ip` depends on the `locals.vpc_cidr` and the `aws_subnet.tf_outpost_subnet_lni`. These private ips will be atteched as internal subnet created in AWS Outpost.
+Then the code above means you will create four ec2 instances with name: `rke2-master-0, rke2-master-1, rke2-worker-0, rke2-worker-1`.  The `private_ip` depends on the `var.vpc_cidr` and the `var.cidr_block_snet_op_local`. These private ips will be atteched as internal subnet created in AWS Outpost.
 
 - Provides AWS credentials in `tf-rke2/provider.tf`
 - Create deployment using terraform

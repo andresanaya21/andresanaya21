@@ -38,23 +38,36 @@ variable "monitoring" {
     default = true
 }
 
-variable "multiple_instances" {
-    type = map(object({
-      private_ip = string
-    }))
-    description = "include ec2 instances as the defautl format"
-    default = {
-        rke2-master-0 = {
-            private_ip = "10.0.5.10"
-        }
-        rke2-master-1 = {
-            private_ip = "10.0.5.11"
-        }
-        rke2-worker-0 = {
-            private_ip = "10.0.5.12"
-        }
+variable "masters" {
+  description = "Map of master nodes"
+  type = map(object({
+    private_ip = string
+  }))
+  default = {
+    "rke2-master-0" = {
+      private_ip = "10.0.5.10"
     }
+    "rke2-master-1" = {
+      private_ip = "10.0.5.11"
+    }
+  }
 }
+
+variable "workers" {
+  description = "Map of worker nodes"
+  type = map(object({
+    private_ip = string
+  }))
+  default = {
+    "rke2-worker-0" = {
+      private_ip = "10.0.5.12"
+    }
+    "rke2-worker-1" = {
+      private_ip = "10.0.5.13"
+    }
+  }
+}
+
 variable "tags" {
     type = map(string)
     description = "set of tags"

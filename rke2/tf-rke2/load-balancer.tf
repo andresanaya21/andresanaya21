@@ -44,7 +44,7 @@ resource "aws_lb" "nlb" {
 
 # Create a target group for the network load balancer and register the EC2 instances as targets
 resource "aws_lb_target_group" "nlb_tg" {
-  name     = "nlb-tg-tf"
+  name     = "nlb-tg-tf-masters"
   port     = 6443
   protocol = "TCP"
   vpc_id   = module.vpc.vpc_id

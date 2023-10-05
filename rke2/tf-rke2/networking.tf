@@ -64,6 +64,15 @@ resource "aws_network_interface" "second_nic" {
   
 }
 
+resource "aws_network_interface" "second_nic_workers" {
+  count = length(local.list_private_ips_workers)
+  subnet_id = aws_subnet.tf_outpost_subnet_lni.id
+  private_ip  = local.list_private_ips_workers[count.index]
+  security_groups = [ module.security_group.security_group_id ]
+  tags = var.tags
+  
+}
+
 resource "aws_network_interface_attachment" "attach_second_nic" {
   count = length(local.list_ec2)
   instance_id          = local.list_ec2[count.index]
@@ -71,4 +80,13 @@ resource "aws_network_interface_attachment" "attach_second_nic" {
   device_index         = 1
 
   depends_on = [ module.ec2_instance ]
+}
+
+resource "aws_network_interface_attachment" "attach_second_nic_workers" {
+  count = length(local.list_ec2)
+  instance_id          = local.list_ec2_workers[count.index]
+  network_interface_id = aws_network_interface.second_nic_workers[count.index].id
+  device_index         = 1
+
+  depends_on = [ module.ec2_instance_workers ]
 }

@@ -8,7 +8,7 @@ module "ec2_instance" {
     delete = "20m"
   }
 
-  for_each = var.multiple_instances
+  for_each = var.masters
 
   ami = local.ami
   name = each.key
@@ -33,6 +33,42 @@ module "ec2_instance" {
   tags = var.tags
 }
 
+module "ec2_instance_workers" { 
+  source = "terraform-aws-modules/ec2-instance/aws"
+  version = "5.5.0"
+  
+  timeouts = {
+    create = "1h30m"
+    update = "2h"
+    delete = "20m"
+  }
+
+  for_each = var.workers
+
+  ami = local.ami
+  name = each.key
+  instance_type = local.instance_type
+  key_name = var.key_name
+  monitoring = var.monitoring
+  vpc_security_group_ids = [aws_security_group.rke2_cluster_sgs.id]
+  subnet_id = aws_subnet.tf_outpost_subnet.id
+  associate_public_ip_address = false
+  iam_role_description = "IAM Role to EC2 intances"
+  create_iam_instance_profile = true
+  user_data =  <<-EOF
+               sudo snap install amazon-ssm-agent --classic
+               sudo snap list amazon-ssm-agent
+               sudo snap start amazon-ssm-agent
+               sudo snap services amazon-ssm-agent
+               EOF
+  iam_role_policies = {
+    AmazonSSMManagedInstanceCore = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+  }
+
+  tags = var.tags
+}
+
+
 output "ec2_length" {
   value = length(module.ec2_instance)
   
@@ -49,7 +85,7 @@ output "ec2_ami" {
 }
 
 output "private_ips" {
-  value = [ for p in values(var.multiple_instances): p.private_ip ]  
+  value = [ for p in values(var.masters): p.private_ip ]  
 }
 
 output "username" {
