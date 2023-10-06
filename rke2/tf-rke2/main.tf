@@ -1,7 +1,13 @@
 resource "aws_iam_policy" "aws_lb_controller" {
   name        = "AWSLoadBalancerControllerIAMPolicy"
   description = "AWS load balancer controller policy"
-  policy      = file("iam-policy.json")
+  policy      = file("./policies/iam-aws-lb-controller.json")
+}
+
+resource "aws_iam_policy" "rke2_policy" {
+  name        = "AWSRKE2Policy"
+  description = "AWS RKE2 cluster policy"
+  policy      = file("./policies/iam-rke2-policy.json")
 }
 
 module "ec2_instance" { 
@@ -35,6 +41,7 @@ module "ec2_instance" {
   iam_role_policies = {
     AmazonSSMManagedInstanceCore = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
     AWSLoadBalancerControllerIAMPolicy = aws_iam_policy.aws_lb_controller.arn
+    AWSRKE2Policy = aws_iam_policy.rke2_policy.arn
   }
 
   instance_tags = {
@@ -76,6 +83,7 @@ module "ec2_instance_workers" {
   iam_role_policies = {
     AmazonSSMManagedInstanceCore = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
     AWSLoadBalancerControllerIAMPolicy = aws_iam_policy.aws_lb_controller.arn
+    AWSRKE2Policy = aws_iam_policy.rke2_policy.arn
   }
   instance_tags = {
     "kubernetes.io/cluster/cluster-mgmt": "shared"
