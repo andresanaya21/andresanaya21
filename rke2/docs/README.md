@@ -127,3 +127,39 @@ EOF
 curl -sfL https://get.rke2.io | INSTALL_RKE2_TYPE="agent" sh -
 systemctl enable --now rke2-agent.service
 ```
+
+## AWS Load Balancer Controller
+
+```
+# reference: https://aws.amazon.com/blogs/containers/exposing-kubernetes-applications-part-3-nginx-ingress-controller/
+
+# download iam policy
+$ curl -o iam-policy.json https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/v2.4.7/docs/install/iam_policy.json
+
+$ aws iam create-policy \
+    --policy-name AWSLoadBalancerControllerIAMPolicy \
+    --policy-document file://iam-policy.json
+
+# attach policy to role attached on instances cluster - manual but can be automated
+# aws load balancer controller
+$ helm repo add eks https://aws.github.io/eks-charts
+
+# install cert-manager, go to cert-manager folder to read installation in README.md
+# install targetgroupbinding crds
+$ kubectl apply -k "github.com/aws/eks-charts/stable/aws-load-balancer-controller//crds?ref=master" --kubeconfig capi-cluster.kubeconfig
+# if not working the command above, use:
+$ kubectl apply -f crds.yaml --kubeconfig capi-cluster.kubeconfig
+
+# install aws load balancer controller
+
+$ helm upgrade -i aws-load-balancer-controller eks/aws-load-balancer-controller -n kube-system --set clusterName=capi-cluster --kubeconfig capi-cluster.kubeconfig
+
+# example using aws load balancer
+
+$ SERVICE_NAME=first SERVICE_TYPE=NodePort NS=apps envsubst < aws-examples/deploy-using-alb.yaml | kubectl --kubeconfig capi-cluster.kubeconfig  apply -f -
+$ SERVICE_NAME=second SERVICE_TYPE=NodePort NS=apps envsubst < aws-examples/deploy-using-alb.yaml | kubectl--kubeconfig capi-cluster.kubeconfig  apply -f -
+$ SERVICE_NAME=error SERVICE_TYPE=NodePort NS=apps envsubst < aws-examples/deploy-using-alb.yaml | kubectl --kubeconfig capi-cluster.kubeconfig  apply -f -
+$ SERVICE_NAME=first SERVICE_TYPE=NodePort NS=apps envsubst < aws-examples/ingress-alb.yaml  | kubectl --kubeconfig rke2.yaml apply -f -
+
+$ kubectl logs -n kube-system --tail -1 -l app.kubernetes.io/name=aws-load-balancer-controller --kubeconfig capi-cluster.kubeconfig
+```
