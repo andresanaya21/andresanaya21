@@ -52,7 +52,7 @@ $ terraform apply
 
 ### 2. Deploy RKE2 software in ec2 instances
 
-- RKE2 by default will install:
+- RKE2 by default will install however you can disable them in the `/etc/rancher/rke2/config.yaml`:
   - ingress-nginx
   - rke2-canal
 

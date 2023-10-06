@@ -7,10 +7,10 @@
 
   tasks:
     - name: install rke2 in master-0
-      ansible.builtin.import_tasks: master-0.yml
+      ansible.builtin.import_tasks: ./masters/master-0.yml
 
     - name: install rke2 in masters
-      ansible.builtin.import_tasks: masters.yml
+      ansible.builtin.import_tasks: ./masters/masters.yml
       
     - name: install rke2 in workers
-      ansible.builtin.import_tasks: workers.yml
+      ansible.builtin.import_tasks: ./workers/workers.yml
