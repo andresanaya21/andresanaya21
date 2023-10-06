@@ -1,1 +1,51 @@
 ---
+
+- name: Get the latest release tag of MetalLB
+  ansible.builtin.uri:
+    url: https://api.github.com/repos/metallb/metallb/releases/latest
+    return_content: yes
+  register: json_output
+  failed_when: json_output.status != 200
+
+- name: Set MetalLB_RTAG variable
+  ansible.builtin.set_fact:
+    MetalLB_RTAG: "{{ (json_output.json.tag_name | regex_replace('v','')) }}"
+
+- name: Download metallb-native.yaml from GitHub
+  ansible.builtin.get_url:
+    url: "https://raw.githubusercontent.com/metallb/metallb/v{{ MetalLB_RTAG }}/config/manifests/metallb-native.yaml"
+    dest: "/opt/metallb-native.yaml"
+    register: download_result
+    until: download_result is succeeded
+    retries: 3
+    delay: 5
+
+- name: Apply the configuration using kubectl
+  ansible.builtin.k8s: 
+    src: /opt/metallb-native.yaml
+    state: present
+
+- name: creating ipAddressPool ot MetalLB
+  ansible.builtin.blockinfile:
+    path: /opt/ipaddress_pools.yaml
+    create: true
+    block: |
+      apiVersion: metallb.io/v1beta1
+      kind: IPAddressPool
+      metadata:
+        name: {{ metalLb.name }}
+        namespace: metallb-system
+      spec:
+        addresses:
+        - {{ metalLb.poolAddress }}
+      ---
+      apiVersion: metallb.io/v1beta1
+      kind: L2Advertisement
+      metadata:
+        name: l2-advert
+        namespace: metallb-system
+
+- name: Apply the ipAddressPool using kubectl
+  ansible.builtin.k8s: 
+    src: /opt/ipaddress_pools.yaml
+    state: present

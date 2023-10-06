@@ -47,9 +47,9 @@ variable "masters" {
     "rke2-master-0" = {
       private_ip = "10.0.5.10"
     }
-    "rke2-master-1" = {
-      private_ip = "10.0.5.11"
-    }
+#    "rke2-master-1" = {
+#      private_ip = "10.0.5.11"
+#    }
   }
 }
 
@@ -62,9 +62,9 @@ variable "workers" {
     "rke2-worker-0" = {
       private_ip = "10.0.5.12"
     }
-    "rke2-worker-1" = {
-      private_ip = "10.0.5.13"
-    }
+#    "rke2-worker-1" = {
+#      private_ip = "10.0.5.13"
+#    }
   }
 }
 
