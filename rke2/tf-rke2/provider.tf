@@ -12,6 +12,8 @@ provider "aws" {
   default_tags {
     tags = {
       subject = "terraform to deploy RKE2 cluster in AWS Outpost"
+      environment = "Outpost"
+      owner = "andres"
     }
   }
   

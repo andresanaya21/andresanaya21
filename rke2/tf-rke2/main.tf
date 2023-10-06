@@ -1,3 +1,9 @@
+resource "aws_iam_policy" "aws_lb_controller" {
+  name        = "AWSLoadBalancerControllerIAMPolicy"
+  description = "AWS load balancer controller policy"
+  policy      = file("iam-policy.json")
+}
+
 module "ec2_instance" { 
   source = "terraform-aws-modules/ec2-instance/aws"
   version = "5.5.0"
@@ -28,9 +34,15 @@ module "ec2_instance" {
                EOF
   iam_role_policies = {
     AmazonSSMManagedInstanceCore = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+    AWSLoadBalancerControllerIAMPolicy = aws_iam_policy.aws_lb_controller.arn
   }
 
-  tags = var.tags
+  instance_tags = {
+    "kubernetes.io/cluster/cluster-mgmt": "shared"
+  }
+  tags = {
+    "kubernetes.io/cluster/cluster-mgmt": "shared"
+  }
 }
 
 module "ec2_instance_workers" { 
@@ -63,6 +75,10 @@ module "ec2_instance_workers" {
                EOF
   iam_role_policies = {
     AmazonSSMManagedInstanceCore = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+    AWSLoadBalancerControllerIAMPolicy = aws_iam_policy.aws_lb_controller.arn
+  }
+  instance_tags = {
+    "kubernetes.io/cluster/cluster-mgmt": "shared"
   }
 
   tags = var.tags

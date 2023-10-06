@@ -8,6 +8,7 @@ controller:
       service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: instance
       service.beta.kubernetes.io/aws-load-balancer-healthcheck-protocol: http
       service.beta.kubernetes.io/aws-load-balancer-healthcheck-path: /healthz
-      service.beta.kubernetes.io/aws-load-balancer-subnets: subnet-06b169f9f9e5f6ad5, subnet-07b14b6207454d426, subnet-0828c8564a85cd586
+#      service.beta.kubernetes.io/aws-load-balancer-subnets: subnet-06b169f9f9e5f6ad5, subnet-07b14b6207454d426, subnet-0828c8564a85cd586
+      service.beta.kubernetes.io/aws-load-balancer-additional-resource-tags: environment=Outpost,owner=andres
 
 # change the health check of the https
