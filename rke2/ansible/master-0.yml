@@ -34,6 +34,9 @@
     path: /etc/rancher/rke2/config.yaml
     create: true
     block: |
+      disable:
+        - rke2-ingress-nginx
+      cloud-provider-name: aws
       token: my-shared-secret
       tls-san:
         - {{ nlb }}

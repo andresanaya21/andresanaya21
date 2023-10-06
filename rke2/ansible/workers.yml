@@ -41,6 +41,9 @@
     path: /etc/rancher/rke2/config.yaml
     create: true
     block: |
+      disable:
+        - rke2-ingress-nginx
+      cloud-provider-name: aws
       server: https://{{ nlb }}:9345
       token: {{ token.stdout }}
   loop: "{{ groups['workers'][0:] }}"
