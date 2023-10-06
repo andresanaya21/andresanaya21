@@ -121,6 +121,8 @@ $ helm repo add eks https://aws.github.io/eks-charts
 # install cert-manager, go to cert-manager folder to read installation in README.md
 # install targetgroupbinding crds
 $ kubectl apply -k "github.com/aws/eks-charts/stable/aws-load-balancer-controller//crds?ref=master" --kubeconfig capi-cluster.kubeconfig
+# if not working the command above, use:
+$ kubectl apply -f crds.yaml --kubeconfig capi-cluster.kubeconfig
 
 # install aws load balancer controller
 
@@ -128,6 +130,8 @@ $ helm upgrade -i aws-load-balancer-controller eks/aws-load-balancer-controller 
 
 # install nginx ingress controller, modify the health check of https
 
+$ helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+$ helm repo update
 $ helm upgrade -i ingress-nginx ingress-nginx/ingress-nginx \
     --version 4.2.3 \
     --namespace kube-system \

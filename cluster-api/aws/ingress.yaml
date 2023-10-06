@@ -9,7 +9,7 @@ spec:
   ingressClassName: nginx
   defaultBackend:
     service:
-      name: error
+      name: ${SERVICE_NAME}
       port:
         name: svc-port
   rules:

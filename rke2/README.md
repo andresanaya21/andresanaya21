@@ -52,6 +52,10 @@ $ terraform apply
 
 ### 2. Deploy RKE2 software in ec2 instances
 
+- RKE2 by default will install:
+  - ingress-nginx
+  - rke2-canal
+
 #### Prodedure
 
 - Modify the `ansible/inventory` file including the ansible host to each group
