@@ -154,7 +154,7 @@ $ kubectl apply -f crds.yaml --kubeconfig capi-cluster.kubeconfig
 
 $ helm upgrade -i aws-load-balancer-controller eks/aws-load-balancer-controller -n kube-system --set clusterName=capi-cluster --kubeconfig capi-cluster.kubeconfig
 
-# example using aws load balancer
+# example using aws load controller
 
 $ SERVICE_NAME=first SERVICE_TYPE=NodePort NS=apps envsubst < aws-examples/deploy-using-alb.yaml | kubectl --kubeconfig capi-cluster.kubeconfig  apply -f -
 $ SERVICE_NAME=second SERVICE_TYPE=NodePort NS=apps envsubst < aws-examples/deploy-using-alb.yaml | kubectl--kubeconfig capi-cluster.kubeconfig  apply -f -
