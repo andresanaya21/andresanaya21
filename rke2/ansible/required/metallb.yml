@@ -21,31 +21,34 @@
     delay: 5
 
 - name: Apply the configuration using kubectl
-  ansible.builtin.k8s: 
-    src: /opt/metallb-native.yaml
+  kubernetes.core.k8s:
     state: present
+    src: /opt/metallb-native.yaml
+    kubeconfig: /etc/rancher/rke2/rke2.yaml
 
-- name: creating ipAddressPool ot MetalLB
-  ansible.builtin.blockinfile:
-    path: /opt/ipaddress_pools.yaml
-    create: true
-    block: |
+- name: Apply the ipAddressPool using kubectl
+  kubernetes.core.k8s: 
+    state: present
+    kubeconfig: /etc/rancher/rke2/rke2.yaml
+    definition:
       apiVersion: metallb.io/v1beta1
       kind: IPAddressPool
       metadata:
-        name: {{ metalLb.name }}
+        name: "{{ metalLb.name }}"
         namespace: metallb-system
       spec:
         addresses:
-        - {{ metalLb.poolAddress }}
-      ---
+        - "{{ metalLb.poolAddress }}"
+
+- name: Apply the L2Advertisement using kubectl
+  kubernetes.core.k8s: 
+    src: /opt/ipaddress_pools.yaml
+    state: present
+    kubeconfig: /etc/rancher/rke2/rke2.yaml
+    definition:
       apiVersion: metallb.io/v1beta1
       kind: L2Advertisement
       metadata:
         name: l2-advert
         namespace: metallb-system
-
-- name: Apply the ipAddressPool using kubectl
-  ansible.builtin.k8s: 
-    src: /opt/ipaddress_pools.yaml
-    state: present
+    wait: yes

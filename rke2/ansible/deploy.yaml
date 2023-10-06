@@ -14,3 +14,6 @@
       
     - name: install rke2 in workers
       ansible.builtin.import_tasks: ./workers/workers.yml
+      
+    - name: install required metallb
+      ansible.builtin.import_tasks: ./required/metallb.yml
