@@ -1,0 +1,27 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ${NS}-ingress
+  namespace: ${NS}
+  annotations:
+      alb.ingress.kubernetes.io/load-balancer-name: ${NS}
+      alb.ingress.kubernetes.io/target-type: instance
+      alb.ingress.kubernetes.io/scheme: internal
+      alb.ingress.kubernetes.io/tags: tactile5g/digital-twins=${NS}
+spec:
+  ingressClassName: alb
+  defaultBackend:
+    service:
+      name: ${SERVICE_NAME}
+      port:
+        name: svc-port
+  rules:
+    - http:
+        paths:
+          - path: /first
+            pathType: Prefix
+            backend:
+              service:
+                name: first
+                port:
+                  name: svc-port

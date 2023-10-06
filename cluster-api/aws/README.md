@@ -139,10 +139,11 @@ $ helm upgrade -i ingress-nginx ingress-nginx/ingress-nginx \
 
  # example using aws load balancer
 
-$ SERVICE_NAME=first NS=apps envsubst < deploy-using-alb.yaml | kubectl --kubeconfig capi-cluster.kubeconfig  apply -f -
-$ SERVICE_NAME=second NS=apps envsubst < deploy-using-alb.yaml | kubectl--kubeconfig capi-cluster.kubeconfig  apply -f -
-$ SERVICE_NAME=error NS=apps envsubst < deploy-using-alb.yaml | kubectl --kubeconfig capi-cluster.kubeconfig  apply -f -
+$ SERVICE_NAME=first SERVICE_TYPE=NodePort NS=apps envsubst < deploy-using-alb.yaml | kubectl --kubeconfig capi-cluster.kubeconfig  apply -f -
+$ SERVICE_NAME=second SERVICE_TYPE=NodePort NS=apps envsubst < deploy-using-alb.yaml | kubectl--kubeconfig capi-cluster.kubeconfig  apply -f -
+$ SERVICE_NAME=error SERVICE_TYPE=NodePort NS=apps envsubst < deploy-using-alb.yaml | kubectl --kubeconfig capi-cluster.kubeconfig  apply -f -
 $ NS=apps envsubst < ingress.yaml | kubectl --kubeconfig capi-cluster.kubeconfig apply -f -
+$ SERVICE_NAME=first SERVICE_TYPE=NodePort NS=apps envsubst < ingress-alb.yaml  | kubectl --kubeconfig rke2.yaml apply -f -
 $ export NLB_URL=$(kubectl get -n kube-system service/ingress-nginx-controller \
     -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
 
