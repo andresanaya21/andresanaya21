@@ -12,7 +12,7 @@ metadata:
     service.beta.kubernetes.io/aws-load-balancer-healthcheck-protocol: http
     service.beta.kubernetes.io/aws-load-balancer-healthcheck-path: /healthz
     service.beta.kubernetes.io/aws-load-balancer-additional-resource-tags: environment=Outpost,owner=andres
-    service.beta.kubernetes.io/aws-load-balancer-subnets: subnet-0eef94b68b5695f8a, subnet-04181eb87263004ff, subnet-00ffe59d62a001b3c #private subnets
+#    service.beta.kubernetes.io/aws-load-balancer-subnets: subnet-0eef94b68b5695f8a, subnet-04181eb87263004ff, subnet-00ffe59d62a001b3c #private subnets
   labels:
     app.kubernetes.io/name: ${SERVICE_NAME}
 spec:
