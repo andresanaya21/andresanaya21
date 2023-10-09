@@ -160,6 +160,7 @@ $ SERVICE_NAME=first SERVICE_TYPE=NodePort NS=apps envsubst < aws-examples/deplo
 $ SERVICE_NAME=second SERVICE_TYPE=NodePort NS=apps envsubst < aws-examples/deploy-using-alb.yaml | kubectl--kubeconfig capi-cluster.kubeconfig  apply -f -
 $ SERVICE_NAME=error SERVICE_TYPE=NodePort NS=apps envsubst < aws-examples/deploy-using-alb.yaml | kubectl --kubeconfig capi-cluster.kubeconfig  apply -f -
 $ SERVICE_NAME=first SERVICE_TYPE=NodePort NS=apps envsubst < aws-examples/ingress-alb.yaml  | kubectl --kubeconfig rke2.yaml apply -f -
+$ SERVICE_NAME=first SERVICE_TYPE=LoadBalancer NS=apps envsubst < aws-examples/service-lb.yaml  | kubectl --kubeconfig rke2.yaml apply -f -
 
 $ kubectl logs -n kube-system --tail -1 -l app.kubernetes.io/name=aws-load-balancer-controller --kubeconfig capi-cluster.kubeconfig
 ```
