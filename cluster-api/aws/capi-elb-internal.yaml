@@ -56,17 +56,18 @@ spec:
   controlPlaneLoadBalancer:
     scheme: internal
     subnets:
-     - subnet-00d70c5676e2bd09a
-     - subnet-0f24e2422638c7b1f
+     - subnet-00ffe59d62a001b3c # private subnet
+     - subnet-04181eb87263004ff # private subnet
+     - subnet-0eef94b68b5695f8a # private subnet
   sshKeyName: outpost-key
   bastion:
 #    enabled: true
   network:
     vpc:
-      id: vpc-09dfbdee1025dc45e
+      id: vpc-0022c4e25e5bb8a39
     subnets:
-      - id: subnet-0690f473ec5d974e6  #subnet private
-      - id: subnet-02d80e6fb1fe4a778  #subnet public
+      - id: subnet-0325bb7e543dda653 # private subnet outpost
+      - id: subnet-0d07d76bc0013a064 # private subnet outpot
   
 ---
 apiVersion: controlplane.cluster.x-k8s.io/v1beta1
