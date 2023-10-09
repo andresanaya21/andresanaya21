@@ -1,5 +1,19 @@
 # DNS name of Network Load Balancer
 nlb: nlb-tf-6305737d9e97f44a.elb.eu-west-3.amazonaws.com
+
+# kubeconfig file path in localhost
+path_kubeconfig: /home/ubuntu/environment/rke2.yaml
+
 metalLb:
+  enable: true
   name: ip-pooladdress-local
   poolAddress: 192.168.1.30-192.168.1.50
+
+cert_manager:
+  enable: false
+
+aws_lb_controller:
+  enable: false
+  
+ingress_nginx:
+  enable: false

@@ -1,52 +1,54 @@
 ---
+- name: MetaLB block
+  block:
+    - name: Get the latest release tag of MetalLB
+      ansible.builtin.uri:
+        url: https://api.github.com/repos/metallb/metallb/releases/latest
+        return_content: yes
+      register: json_output
+      failed_when: json_output.status != 200
 
-- name: Get the latest release tag of MetalLB
-  ansible.builtin.uri:
-    url: https://api.github.com/repos/metallb/metallb/releases/latest
-    return_content: yes
-  register: json_output
-  failed_when: json_output.status != 200
+    - name: Set MetalLB_RTAG variable
+      ansible.builtin.set_fact:
+        MetalLB_RTAG: "{{ (json_output.json.tag_name | regex_replace('v','')) }}"
 
-- name: Set MetalLB_RTAG variable
-  ansible.builtin.set_fact:
-    MetalLB_RTAG: "{{ (json_output.json.tag_name | regex_replace('v','')) }}"
+    - name: Download metallb-native.yaml from GitHub
+      get_url:
+        url: "https://raw.githubusercontent.com/metallb/metallb/v{{ MetalLB_RTAG }}/config/manifests/metallb-native.yaml"
+        dest: "/opt/metallb-native.yaml"
+        
+    - name: Apply the configuration using kubectl
+      k8s:
+        state: present
+        src: /opt/metallb-native.yaml
+        kubeconfig: /etc/rancher/rke2/rke2.yaml
+      become_user: ubuntu
 
-- name: Download metallb-native.yaml from GitHub
-  get_url:
-    url: "https://raw.githubusercontent.com/metallb/metallb/v{{ MetalLB_RTAG }}/config/manifests/metallb-native.yaml"
-    dest: "/opt/metallb-native.yaml"
-    
-- name: Apply the configuration using kubectl
-  k8s:
-    state: present
-    src: /opt/metallb-native.yaml
-    kubeconfig: /etc/rancher/rke2/rke2.yaml
-  become_user: ubuntu
-
-- name: Apply the ipAddressPool using kubectl
-  k8s:
-    namespace: metallb-system
-    state: present
-    kubeconfig: /etc/rancher/rke2/rke2.yaml
-    definition:
-      apiVersion: metallb.io/v1beta1
-      kind: IPAddressPool
-      metadata:
-        name: "{{ metalLb.name }}"
-      spec:
-        addresses:
-        - "{{ metalLb.poolAddress }}"
-  become_user: ubuntu
-
-- name: Apply the L2Advertisement using kubectl
-  k8s: 
-    state: present
-    kubeconfig: /etc/rancher/rke2/rke2.yaml
-    definition:
-      apiVersion: metallb.io/v1beta1
-      kind: L2Advertisement
-      metadata:
-        name: l2-advert
+    - name: Apply the ipAddressPool using kubectl
+      k8s:
         namespace: metallb-system
-    wait: yes
-  become_user: ubuntu
+        state: present
+        kubeconfig: /etc/rancher/rke2/rke2.yaml
+        definition:
+          apiVersion: metallb.io/v1beta1
+          kind: IPAddressPool
+          metadata:
+            name: "{{ metalLb.name }}"
+          spec:
+            addresses:
+            - "{{ metalLb.poolAddress }}"
+      become_user: ubuntu
+
+    - name: Apply the L2Advertisement using kubectl
+      k8s: 
+        state: present
+        kubeconfig: /etc/rancher/rke2/rke2.yaml
+        definition:
+          apiVersion: metallb.io/v1beta1
+          kind: L2Advertisement
+          metadata:
+            name: l2-advert
+            namespace: metallb-system
+        wait: yes
+      become_user: ubuntu
+  when: "{{ metalLb.enable }} == true"

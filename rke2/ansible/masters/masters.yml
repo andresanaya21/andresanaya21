@@ -16,6 +16,13 @@
   loop: "{{ groups['masters'][1:] }}"
   delegate_to: "{{ item }}"
 
+- name: install dependencies
+  ansible.builtin.apt:
+    name: python3-pip
+    state: latest
+  loop: "{{ groups['masters'][1:] }}"
+  delegate_to: "{{ item }}"
+
 - name: Remove dependencies that are no longer required
   ansible.builtin.apt:
     autoremove: yes

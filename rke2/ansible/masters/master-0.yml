@@ -11,7 +11,6 @@
   ansible.builtin.apt:
     name: nfs-common
     state: latest
-#    update_cache: yes
 
 - name: Remove dependencies that are no longer required
   ansible.builtin.apt:

@@ -8,6 +8,8 @@
 sudo apt -y install software-properties-common
 sudo apt-add-repository ppa:ansible/ansible
 sudo apt install ansible
+sudo ansible-galaxy collection install community.kubernetes
+
 
 # install kubectl
 $ curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"

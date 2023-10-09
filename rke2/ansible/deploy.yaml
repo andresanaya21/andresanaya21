@@ -15,5 +15,47 @@
     - name: install rke2 in workers
       ansible.builtin.import_tasks: ./workers/workers.yml
       
+- name: Pip3 operations with Ansible
+  hosts: masters
+  gather_facts: no
+  tasks:
+    - name: install pip
+      ansible.builtin.apt:
+        name: python3-pip
+        state: latest
+        
+    - name: install Python packages
+      pip:
+        name:
+          - PyYAML
+          - kubernetes
+          - pyhelm
+          - openshift
+          - grpcio
+        executable: pip3
+        state: present
+      become: yes
+  
+- name: Install required folder tools
+  hosts: masters[0]
+  become: true
+  vars_files:
+       - common_vars.yml
+  tasks: 
     - name: install required metallb
       ansible.builtin.import_tasks: ./required/metallb.yml
+      
+- name: Install required folder tools
+  hosts: localhost
+  gather_facts: no
+  vars_files:
+       - common_vars.yml
+  tasks: 
+    - name: install required cert-manager
+      ansible.builtin.import_tasks: ./required/cert-manager.yml
+      
+    - name: install required aws load balanacer controller
+      ansible.builtin.import_tasks: ./required/aws-lb-controller.yml
+      
+    - name: install required ingress nginx
+      ansible.builtin.import_tasks: ./required/ingress-nginx.yml
