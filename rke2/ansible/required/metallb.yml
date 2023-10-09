@@ -12,22 +12,20 @@
     MetalLB_RTAG: "{{ (json_output.json.tag_name | regex_replace('v','')) }}"
 
 - name: Download metallb-native.yaml from GitHub
-  ansible.builtin.get_url:
+  get_url:
     url: "https://raw.githubusercontent.com/metallb/metallb/v{{ MetalLB_RTAG }}/config/manifests/metallb-native.yaml"
     dest: "/opt/metallb-native.yaml"
-    register: download_result
-    until: download_result is succeeded
-    retries: 3
-    delay: 5
-
+    
 - name: Apply the configuration using kubectl
-  kubernetes.core.k8s:
+  k8s:
     state: present
     src: /opt/metallb-native.yaml
     kubeconfig: /etc/rancher/rke2/rke2.yaml
+  become_user: ubuntu
 
 - name: Apply the ipAddressPool using kubectl
-  kubernetes.core.k8s: 
+  k8s:
+    namespace: metallb-system
     state: present
     kubeconfig: /etc/rancher/rke2/rke2.yaml
     definition:
@@ -35,14 +33,13 @@
       kind: IPAddressPool
       metadata:
         name: "{{ metalLb.name }}"
-        namespace: metallb-system
       spec:
         addresses:
         - "{{ metalLb.poolAddress }}"
+  become_user: ubuntu
 
 - name: Apply the L2Advertisement using kubectl
-  kubernetes.core.k8s: 
-    src: /opt/ipaddress_pools.yaml
+  k8s: 
     state: present
     kubeconfig: /etc/rancher/rke2/rke2.yaml
     definition:
@@ -52,3 +49,4 @@
         name: l2-advert
         namespace: metallb-system
     wait: yes
+  become_user: ubuntu

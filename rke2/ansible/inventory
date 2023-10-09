@@ -9,3 +9,6 @@ rke2-worker-0 ansible_connection=ssh ansible_user=ubuntu ansible_ssh_private_key
 
 [local]
 localhost  ansible_connection=local
+
+[masters:vars]
+ansible_python_interpreter=/usr/bin/python3

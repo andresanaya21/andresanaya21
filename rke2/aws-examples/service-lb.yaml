@@ -5,14 +5,7 @@ metadata:
   name: ${SERVICE_NAME}
   namespace: ${NS}
   annotations:
-    service.beta.kubernetes.io/aws-load-balancer-name: ${SERVICE_NAME}
-    service.beta.kubernetes.io/aws-load-balancer-type: external
-    service.beta.kubernetes.io/aws-load-balancer-scheme: internal
-    service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: instance
-    service.beta.kubernetes.io/aws-load-balancer-healthcheck-protocol: http
-    service.beta.kubernetes.io/aws-load-balancer-healthcheck-path: /healthz
-    service.beta.kubernetes.io/aws-load-balancer-additional-resource-tags: environment=Outpost,owner=andres
-    service.beta.kubernetes.io/aws-load-balancer-subnets: subnet-0eef94b68b5695f8a, subnet-04181eb87263004ff, subnet-00ffe59d62a001b3c #private subnets
+    metallb.universe.tf/address-pool: ip-pooladdress-local
   labels:
     app.kubernetes.io/name: ${SERVICE_NAME}
 spec:
