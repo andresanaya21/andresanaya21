@@ -59,7 +59,7 @@ $ terraform apply
 #### Prodedure
 
 - Modify the `ansible/inventory` file including the ansible host to each group
-- Modify the `ansible/common_vars.yml` file including the DNS to nlb
+- Modify the `ansible/common_vars.yml` file including the DNS to nlb and additional variables
 - Execute
 
 ```
