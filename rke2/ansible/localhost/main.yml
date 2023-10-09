@@ -1,0 +1,58 @@
+---
+- name: Install AWS CLI and other tools
+  hosts: localhost
+  become: true
+  gather_facts: no
+  vars_files:
+    - default-vars.yml
+    - vars.yml
+
+  tasks:
+    - name: aws cli
+      block:
+        - name: Download AWS CLI
+          ansible.builtin.get_url:
+            url: "{{ aws_cli_url }}"
+            dest: /opt/awscliv2.zip
+    
+        - name: Unzip AWS CLI
+          unarchive:
+            src: /opt/awscliv2.zip
+            dest: /opt/
+            remote_src: yes
+    
+        - name: Install AWS CLI
+          command:
+            cmd: ./aws/install
+            chdir: /opt/
+      when: "{{ install_awscli }} == true"
+
+    - name: Download clusterctl
+      delegate_to: localhost
+      ansible.builtin.get_url:
+        url: https://github.com/kubernetes-sigs/cluster-api/releases/download/v1.5.1/clusterctl-linux-amd64
+        dest: /opt/clusterctl
+        mode: 0755
+
+    - name: Install clusterctl
+      ansible.builtin.copy:
+        src: /opt/clusterctl
+        dest: /usr/local/bin/clusterctl
+        mode: 0755
+        owner: root
+        group: root
+
+    - name: Check clusterctl version
+      command:
+        cmd: clusterctl version
+
+    - name: Download clusterawsadm 
+      ansible.builtin.get_url:
+        url: "{{ clusterawsadm_url }}"
+        dest: /opt/clusterawsadm
+        mode: 0755
+
+    - name: Install clusterawsadm 
+      ansible.builtin.copy:
+        src: /opt/clusterawsadm
+        dest: /usr/local/bin/clusterawsadm

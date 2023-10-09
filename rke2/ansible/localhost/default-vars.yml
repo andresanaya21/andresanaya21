@@ -1,0 +1,3 @@
+aws_cli_url: https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip
+clusterctl_url: https://github.com/kubernetes-sigs/cluster-api/releases/download/v1.5.1/clusterctl-linux-amd64
+clusterawsadm_url: https://github.com/kubernetes-sigs/cluster-api-provider-aws/releases/download/v2.2.1/clusterawsadm-linux-amd64
