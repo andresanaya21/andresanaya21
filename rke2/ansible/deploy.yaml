@@ -41,7 +41,19 @@
           - grpcio
         executable: pip3
         state: present
-  
+
+- name: getting kubeconfig from masters
+  hosts: masters[0]
+  become: true
+  vars_files:
+       - common_vars.yml
+  tasks:
+    - name: kubeconfig
+      ansible.builtin.fetch:
+        src: /etc/rancher/rke2/rke2.yaml
+        dest: "{{ path_kubeconfig }}"
+      
+
 - name: Install required folder tools
   hosts: masters[0]
   become: true
