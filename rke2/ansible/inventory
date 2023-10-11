@@ -1,10 +1,10 @@
 [masters]
-rke2-master-0 ansible_connection=ssh ansible_user=ubuntu ansible_ssh_private_key_file=/home/ubuntu/environment/outpost-key.pem ansible_host=ip-10-0-4-138.eu-west-3.compute.internal
+rke2-master-0 ansible_connection=ssh ansible_user=ubuntu ansible_ssh_private_key_file=/home/ubuntu/environment/outpost-key.pem ansible_host=ip-10-0-0-104.eu-west-3.compute.internal
 #rke2-master-1 ansible_connection=ssh ansible_user=ubuntu ansible_ssh_private_key_file=/home/ubuntu/environment/outpost-key.pem ansible_host=ip-10-0-4-121.eu-west-3.compute.internal
 
 
 [workers]
-rke2-worker-0 ansible_connection=ssh ansible_user=ubuntu ansible_ssh_private_key_file=/home/ubuntu/environment/outpost-key.pem ansible_host=ip-10-0-4-174.eu-west-3.compute.internal
+rke2-worker-0 ansible_connection=ssh ansible_user=ubuntu ansible_ssh_private_key_file=/home/ubuntu/environment/outpost-key.pem ansible_host=ip-10-0-4-214.eu-west-3.compute.internal
 #rke2-worker-1 ansible_connection=ssh ansible_user=ubuntu ansible_ssh_private_key_file=/home/ubuntu/environment/outpost-key.pem ansible_host=ip-10-0-4-175.eu-west-3.compute.internal
 
 [local]
