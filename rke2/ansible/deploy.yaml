@@ -23,8 +23,7 @@
   
     - name: update all packages to their latest version
       ansible.builtin.apt:
-        name: "*"
-        state: latest
+        update_cache: yes
         
     - name: install pip
       ansible.builtin.apt:
@@ -52,8 +51,15 @@
       ansible.builtin.fetch:
         src: /etc/rancher/rke2/rke2.yaml
         dest: "{{ path_kubeconfig }}"
+        flat: yes
+    
+    - name: replace 127.0.0.1 with "{{ nlb }}" in "{{ path_kubeconfig }}"
+      replace:
+        path: "{{ path_kubeconfig }}"
+        regexp: '127\.0\.0\.1'
+        replace: '{{ nlb }}'
+      delegate_to: localhost
       
-
 - name: Install required folder tools
   hosts: masters[0]
   become: true
