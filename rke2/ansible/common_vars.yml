@@ -1,7 +1,7 @@
 # DNS name of Network Load Balancer
 nlb: nlb-tf-ef3e76fd2a993767.elb.eu-west-3.amazonaws.com
 
-# kubeconfig file path in localhost
+# kubeconfig file path in localhost. This file will be generated automatically
 path_kubeconfig: /home/ubuntu/environment/rke2.yaml
 
 metalLb:
