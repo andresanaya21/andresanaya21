@@ -7,7 +7,7 @@
 # install ansible
 sudo apt -y install software-properties-common
 sudo apt-add-repository ppa:ansible/ansible
-sudo apt install ansible
+sudo apt install ansible -y
 sudo ansible-galaxy collection install community.kubernetes
 
 
@@ -66,6 +66,8 @@ No requirements.
 | Name | Type |
 |------|------|
 | [aws_cloud9_environment_ec2.bastion](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/cloud9_environment_ec2) | resource |
+| [aws_iam_policy.aws_lb_controller](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_policy) | resource |
+| [aws_iam_policy.rke2_policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_policy) | resource |
 | [aws_lb.nlb](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/lb) | resource |
 | [aws_lb_listener.nlb_listener](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/lb_listener) | resource |
 | [aws_lb_listener.nlb_listener_server](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/lb_listener) | resource |
@@ -92,15 +94,17 @@ No requirements.
 
 | Name | Description | Type | Default |
 |------|-------------|------|---------|
+| <a name="input_bastion_host"></a> [bastion\_host](#input\_bastion\_host) | cloud9 bastion host to access to the cluster rke2 | `bool` | `true` |
 | <a name="input_cidr_block_snet_op_local"></a> [cidr\_block\_snet\_op\_local](#input\_cidr\_block\_snet\_op\_local) | value of the cidr to the subnet created in the outpost. This subnet will be used to connect the instances to on-premise. Please keep in mind the var.vpc\_cidr variable | `string` | `"10.0.5.0/24"` |
 | <a name="input_cidr_block_snet_op_region"></a> [cidr\_block\_snet\_op\_region](#input\_cidr\_block\_snet\_op\_region) | value of the cidr to the subnet created in the outpost. This subnet will be used to connect the instances to region. Please keep in mind the var.vpc\_cidr variable | `string` | `"10.0.4.0/24"` |
+| <a name="input_control_plane_edge"></a> [control\_plane\_edge](#input\_control\_plane\_edge) | control plane in Outpost (edge) | `bool` | `false` |
 | <a name="input_key_name"></a> [key\_name](#input\_key\_name) | name of key | `string` | `"outpost-key"` |
-| <a name="input_masters"></a> [masters](#input\_masters) | Map of master nodes | <pre>map(object({<br>    private_ip = string<br>  }))</pre> | <pre>{<br>  "rke2-master-0": {<br>    "private_ip": "10.0.5.10"<br>  },<br>  "rke2-master-1": {<br>    "private_ip": "10.0.5.11"<br>  }<br>}</pre> |
+| <a name="input_masters"></a> [masters](#input\_masters) | Map of master nodes | <pre>map(object({<br>    private_ip = string<br>  }))</pre> | <pre>{<br>  "rke2-master-0": {<br>    "private_ip": "10.0.5.10"<br>  }<br>}</pre> |
 | <a name="input_monitoring"></a> [monitoring](#input\_monitoring) | true/false enabling monitoring | `bool` | `true` |
 | <a name="input_tags"></a> [tags](#input\_tags) | set of tags | `map(string)` | <pre>{<br>  "environment": "Outpost",<br>  "owner": "andres"<br>}</pre> |
 | <a name="input_vpc_cidr"></a> [vpc\_cidr](#input\_vpc\_cidr) | cird to vpc | `string` | `"10.0.0.0/16"` |
 | <a name="input_vpc_name"></a> [vpc\_name](#input\_vpc\_name) | name of vpc | `string` | `"tf-vpc-outpost"` |
-| <a name="input_workers"></a> [workers](#input\_workers) | Map of worker nodes | <pre>map(object({<br>    private_ip = string<br>  }))</pre> | <pre>{<br>  "rke2-worker-0": {<br>    "private_ip": "10.0.5.12"<br>  },<br>  "rke2-worker-1": {<br>    "private_ip": "10.0.5.13"<br>  }<br>}</pre> |
+| <a name="input_workers"></a> [workers](#input\_workers) | Map of worker nodes | <pre>map(object({<br>    private_ip = string<br>  }))</pre> | <pre>{<br>  "rke2-worker-0": {<br>    "private_ip": "10.0.5.12"<br>  }<br>}</pre> |
 
 ## Outputs
 
