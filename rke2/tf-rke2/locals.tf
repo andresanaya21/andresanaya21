@@ -9,7 +9,8 @@ locals {
   azs      = slice(data.aws_availability_zones.available.names, 0, 3)
   username = data.aws_caller_identity.current.user_id
   ami = "ami-05b5a865c3579bbc4"
-  instance_type = "c6id.2xlarge"
+  instance_type_outpost = "c6id.2xlarge"
+  instance_type_region = "t3.medium"
   outpost_arn = "arn:aws:outposts:eu-west-3:050107717205:outpost/op-066d526775d892a1f"
   
 }

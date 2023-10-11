@@ -1,4 +1,5 @@
 resource "aws_cloud9_environment_ec2" "bastion" {
+    count = (var.bastion_host ? 1 : 0)
     name = "bastion-telefonica"
     description = "bastion to telefonica"
     instance_type = "t3.medium"

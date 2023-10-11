@@ -32,6 +32,18 @@ variable "key_name" {
   
 }
 
+variable "control_plane_edge" {
+  type = bool
+  description = "control plane in Outpost (edge)"
+  default = false
+}
+
+variable "bastion_host" {
+  type = bool
+  description = "cloud9 bastion host to access to the cluster rke2"
+  default = true
+  
+}
 variable "monitoring" {
     type = bool
     description = "true/false enabling monitoring"
