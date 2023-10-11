@@ -12,5 +12,12 @@ locals {
   instance_type_outpost = "c6id.2xlarge"
   instance_type_region = "t3.medium"
   outpost_arn = "arn:aws:outposts:eu-west-3:050107717205:outpost/op-066d526775d892a1f"
+  root_block_device = [
+    {
+      volume_type           = "gp2"
+      volume_size           = 80
+      delete_on_termination = true
+    }
+  ]
   
 }

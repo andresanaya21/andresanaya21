@@ -38,6 +38,7 @@ module "ec2_instance" {
                sudo snap start amazon-ssm-agent
                sudo snap services amazon-ssm-agent
                EOF
+  root_block_device = "${var.control_plane_edge ? [] : local.root_block_device}"
   iam_role_policies = {
     AmazonSSMManagedInstanceCore = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
     AWSLoadBalancerControllerIAMPolicy = aws_iam_policy.aws_lb_controller.arn
@@ -80,6 +81,12 @@ module "ec2_instance_workers" {
                sudo snap start amazon-ssm-agent
                sudo snap services amazon-ssm-agent
                EOF
+#  root_block_device = [{
+#      volume_type           = "gp2"
+#      volume_size           = 80
+#      delete_on_termination = true
+#      outpost_arn            = local.outpost_arn
+#  }]
   iam_role_policies = {
     AmazonSSMManagedInstanceCore = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
     AWSLoadBalancerControllerIAMPolicy = aws_iam_policy.aws_lb_controller.arn
