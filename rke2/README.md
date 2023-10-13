@@ -16,7 +16,7 @@
 
 #### Procedure
 
-- modify the `tf-rke2/vars.tf`. `masters` and `workers` variables are a object dict. If you have:
+- modify the `tf-rke2/vars.tf`. `masters` and `workers`. If you have:
 
 ```
 # masters
@@ -52,7 +52,7 @@ $ terraform apply
 
 ### 2. Deploy RKE2 software in ec2 instances
 
-- RKE2 by default will install however you can disable them in the `/etc/rancher/rke2/config.yaml`:
+- RKE2 by default will install the packages below. However you can disable them in the `/etc/rancher/rke2/config.yaml`:
   - ingress-nginx
   - rke2-canal
 
