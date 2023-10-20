@@ -1,0 +1,14 @@
+# Local .terraform directories
+*/.terraform/*
+**/.terraform/*
+*/.terraform/*
+./**/.terraform/
+**/.terragrunt-cache/
+terragrunt.iml
+
+# Lock files
+.terraform.lock.hcl
+
+# .tfstate files
+*.tfstate
+*.tfstate.*
