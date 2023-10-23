@@ -73,7 +73,7 @@ helm repo add longhorn https://charts.longhorn.io
 # update
 helm repo update
 # install
-helm upgrade -i longhorn longhorn/longhorn --namespace longhorn-system --create-namespace
+helm upgrade -i longhorn longhorn/longhorn --namespace longhorn-system --create-namespace --set ingress.enabled=true --set ingress.ingressClassName=nginx --set ingress.host=storage.tactile.int
 
 # metalLB
 MetalLB_RTAG=$(curl -s https://api.github.com/repos/metallb/metallb/releases/latest|grep tag_name | cut -d '"' -f 4|sed 's/v//')
