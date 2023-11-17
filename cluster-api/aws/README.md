@@ -143,9 +143,16 @@ $ SERVICE_NAME=first SERVICE_TYPE=NodePort NS=apps envsubst < deploy-using-alb.y
 $ SERVICE_NAME=second SERVICE_TYPE=NodePort NS=apps envsubst < deploy-using-alb.yaml | kubectl--kubeconfig capi-cluster.kubeconfig  apply -f -
 $ SERVICE_NAME=error SERVICE_TYPE=NodePort NS=apps envsubst < deploy-using-alb.yaml | kubectl --kubeconfig capi-cluster.kubeconfig  apply -f -
 $ NS=apps envsubst < ingress.yaml | kubectl --kubeconfig capi-cluster.kubeconfig apply -f -
-$ SERVICE_NAME=first SERVICE_TYPE=NodePort NS=apps envsubst < ingress-alb.yaml  | kubectl --kubeconfig rke2.yaml apply -f -
 $ export NLB_URL=$(kubectl get -n kube-system service/ingress-nginx-controller \
     -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
 
 $ kubectl logs -n kube-system --tail -1 -l app.kubernetes.io/name=aws-load-balancer-controller --kubeconfig capi-cluster.kubeconfig
+
+# example using nginx controller 
+
+$ SERVICE_NAME=first SERVICE_TYPE=ClusterIP NS=apps envsubst < deploy-using-alb.yaml | kubectl --kubeconfig capi-cluster.kubeconfig  apply -f -
+$ SERVICE_NAME=second SERVICE_TYPE=ClusterIP NS=apps envsubst < deploy-using-alb.yaml | kubectl--kubeconfig capi-cluster.kubeconfig  apply -f -
+$ SERVICE_NAME=error SERVICE_TYPE=ClusterIP NS=apps envsubst < deploy-using-alb.yaml | kubectl --kubeconfig capi-cluster.kubeconfig  apply -f -
+$ SERVICE_NAME=first NS=apps envsubst < ingress-alb.yaml  | kubectl --kubeconfig rke2.yaml apply -f -
+
 ```

@@ -45,7 +45,7 @@ metadata:
   labels:
     app.kubernetes.io/name: ${SERVICE_NAME}
 spec:
-  type: ClusterIP
+  type: ${SERVICE_TYPE}
   selector:
     app.kubernetes.io/name: ${SERVICE_NAME}
   ports:
