@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ${SERVICE_NAME}-metallb
+  namespace: ${NS}
+  annotations:
+    metallb.universe.tf/loadBalancerIPs: 10.11.29.31
+    app.kubernetes.io/name: ${SERVICE_NAME}-metlallb
+spec:
+  ports:
+  - port: 80
+    targetPort: 80
+  selector:
+    app.kubernetes.io/name: ${SERVICE_NAME}
+  type: LoadBalancer
+

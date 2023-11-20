@@ -155,4 +155,13 @@ $ SERVICE_NAME=second SERVICE_TYPE=ClusterIP NS=apps envsubst < deploy-using-alb
 $ SERVICE_NAME=error SERVICE_TYPE=ClusterIP NS=apps envsubst < deploy-using-alb.yaml | kubectl --kubeconfig capi-cluster.kubeconfig  apply -f -
 $ SERVICE_NAME=first NS=apps envsubst < ingress-alb.yaml  | kubectl --kubeconfig rke2.yaml apply -f -
 
+# example using metallb
+SERVICE_NAME=four SERVICE_TYPE=ClusterIP NS=apps envsubst < service-metallb.yaml | kubectl delete -f -
+
+# example to connect pods from the outpost node to internal network (uma)
+# Use nodePort as service type. Using that you can access to the internal network from/to
+# the pods through the internal networlk. try ping in the pods to 10.11.29.1
+
+$ SERVICE_NAME=first SERVICE_TYPE=NodePort NS=apps envsubst < deploy-using-alb.yaml | kubectl --kubeconfig capi-cluster.kubeconfig  apply -f -
+
 ```
