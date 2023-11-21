@@ -1,33 +1,37 @@
+# create clusterissuer
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
 metadata:
-  name: selfsigned-cluster-issuer
+  name: selfsigned-tactile5g
 spec:
   selfSigned: {}
 
 ---
-
+# create self-signed certtificate
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: ca-tactile5g
+  name: certi-ca-tactile5g
   namespace: cert-manager
 spec:
   isCA: true
-  commonName: tactil5g-ca
-  secretName: tactil5g-ca
+  commonName: tactile5g
+  secretName: tactile5g
+  dnsNames:
+   - "*.tactile5g.int"
   issuerRef:
-    name: selfsigned-cluster-issuer 
+    name: selfsigned-tactile5g
     kind: ClusterIssuer
     group: cert-manager.io
 
 ---
 
+# create clusterissuer that use ca certificate
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
 metadata:
-  name: tactil5g-cluster-issuer
+  name: tactile5g-cissuer
 spec:
   ca:
-    secretName: tactil5g-ca
+    secretName: tactile5g
 
