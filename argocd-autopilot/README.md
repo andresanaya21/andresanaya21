@@ -17,7 +17,7 @@ argocd-autopilot version
 export GIT_TOKEN=ghp_PcZ...IP0
 
 # export git repo
-export GIT_REPO=https://github.com/andresanaya21/provisioning.git
+export GIT_REPO=https://github.com/andresanaya21/iac.git
 
 # create bootstrap
 argocd-autopilot repo bootstrap
