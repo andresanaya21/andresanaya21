@@ -142,7 +142,7 @@ $ helm upgrade -i ingress-nginx ingress-nginx/ingress-nginx \
 $ SERVICE_NAME=first SERVICE_TYPE=NodePort NS=apps envsubst < deploy-using-alb.yaml | kubectl --kubeconfig capi-cluster.kubeconfig  apply -f -
 $ SERVICE_NAME=second SERVICE_TYPE=NodePort NS=apps envsubst < deploy-using-alb.yaml | kubectl--kubeconfig capi-cluster.kubeconfig  apply -f -
 $ SERVICE_NAME=error SERVICE_TYPE=NodePort NS=apps envsubst < deploy-using-alb.yaml | kubectl --kubeconfig capi-cluster.kubeconfig  apply -f -
-$ NS=apps envsubst < ingress.yaml | kubectl --kubeconfig capi-cluster.kubeconfig apply -f -
+$ SERVICE_NAME=first NS=apps envsubst < ingress-alb.yaml | kubectl --kubeconfig capi-cluster.kubeconfig apply -f -
 $ export NLB_URL=$(kubectl get -n kube-system service/ingress-nginx-controller \
     -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
 
@@ -153,7 +153,7 @@ $ kubectl logs -n kube-system --tail -1 -l app.kubernetes.io/name=aws-load-balan
 $ SERVICE_NAME=first SERVICE_TYPE=ClusterIP NS=apps envsubst < deploy-using-alb.yaml | kubectl --kubeconfig capi-cluster.kubeconfig  apply -f -
 $ SERVICE_NAME=second SERVICE_TYPE=ClusterIP NS=apps envsubst < deploy-using-alb.yaml | kubectl--kubeconfig capi-cluster.kubeconfig  apply -f -
 $ SERVICE_NAME=error SERVICE_TYPE=ClusterIP NS=apps envsubst < deploy-using-alb.yaml | kubectl --kubeconfig capi-cluster.kubeconfig  apply -f -
-$ SERVICE_NAME=first NS=apps envsubst < ingress-alb.yaml  | kubectl --kubeconfig rke2.yaml apply -f -
+$ SERVICE_NAME=first NS=apps envsubst < ingress.yaml  | kubectl --kubeconfig rke2.yaml apply -f -
 
 # example using metallb
 SERVICE_NAME=four SERVICE_TYPE=ClusterIP NS=apps envsubst < service-metallb.yaml | kubectl delete -f -
