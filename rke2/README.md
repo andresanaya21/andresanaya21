@@ -65,3 +65,10 @@ $ terraform apply
 ```
 $ ansbile-playbook deploy.yaml -i inventory
 ```
+
+## Delete nodes
+```
+$ kubectl get nodes
+$ kubectl drain ip-172-0-4-231.eu-west-3.compute.internal --ignore-daemonsets --delete-emptydir-data 
+$ kubectl delete ip-172-0-4-231.eu-west-3.compute.internal
+```
