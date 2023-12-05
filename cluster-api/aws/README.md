@@ -102,6 +102,12 @@ kubectl --kubeconfig=./capi-cluster.kubeconfig get nodes
 # before delete, firstly ensure ingress controller deleted in cluster
 kubectl delete cluster capi-cluster
 
+# if delete cluster is stuck, delete the finalizer editing the resource
+kubectl api-resources --verbs=list --namespaced -o name | xargs -n 1 kubectl get --show-kind --ignore-not-found -n telefonica-cluster
+kubectl edit cluster telefonica-cluster -n telefonica-cluster
+finalizers:
+- cluster.x-k8s.io
+
 ```
 
 ```
@@ -163,5 +169,4 @@ SERVICE_NAME=four SERVICE_TYPE=ClusterIP NS=apps envsubst < service-metallb.yaml
 # the pods through the internal networlk. try ping in the pods to 10.11.29.1
 
 $ SERVICE_NAME=first SERVICE_TYPE=NodePort NS=apps envsubst < deploy-using-alb.yaml | kubectl --kubeconfig capi-cluster.kubeconfig  apply -f -
-
 ```
