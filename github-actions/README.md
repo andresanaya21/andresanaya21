@@ -1,5 +1,6 @@
 # GitHub Actions
-´´´
+
+```
 # https://www.velotio.com/engineering-blog/how-to-deploy-github-actions-self-hosted-runners-on-kubernetes
 
 $ export GITHUB_TOKEN=XXXxxxXXXxxxxXYAVNa 
@@ -19,4 +20,5 @@ $ kubectl --namespace actions-runner-system get all
 # runner deployment
 $ kubectl create -f runner.yaml
 $ kubectl get pod -n actions-runner-system | grep -i "k8s-action-runner"
-´´´
+
+```
