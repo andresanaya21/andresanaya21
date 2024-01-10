@@ -9,8 +9,7 @@ metadata:
 spec:
   ports:
   - port: 80
-    targetPort: 80
+    targetPort: app-port
   selector:
     app.kubernetes.io/name: ${SERVICE_NAME}
   type: LoadBalancer
-
