@@ -143,7 +143,9 @@ $ helm upgrade -i ingress-nginx ingress-nginx/ingress-nginx \
     --namespace kube-system \
     --values values.yaml --kubeconfig capi-cluster.kubeconfig
 
- # example using aws load balancer
+# example using aws load balancer
+# in the dt, aws-load-balancer controller cloud be used, but if the dt is deployed in region zone, the AWSLoadBalancerControllerIAMPolicy needs
+# to be added manually. In edge zone the aws-load-balancer-controller won't be used, instead will be use ingress-nginx-controller.
 
 $ SERVICE_NAME=first SERVICE_TYPE=NodePort NS=apps envsubst < deploy-using-alb.yaml | kubectl --kubeconfig capi-cluster.kubeconfig  apply -f -
 $ SERVICE_NAME=second SERVICE_TYPE=NodePort NS=apps envsubst < deploy-using-alb.yaml | kubectl--kubeconfig capi-cluster.kubeconfig  apply -f -
