@@ -155,7 +155,7 @@ $ export NLB_URL=$(kubectl get -n kube-system service/ingress-nginx-controller \
     -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
 
 $ kubectl logs -n kube-system --tail -1 -l app.kubernetes.io/name=aws-load-balancer-controller --kubeconfig capi-cluster.kubeconfig
-
+$ kubectl --kubeconfig telefonica-region-example-region-0.kubeconfig logs -f -n kube-system  -l app.kubernetes.io/name=aws-load-balancer-controller
 # example using nginx controller 
 
 $ SERVICE_NAME=first SERVICE_TYPE=ClusterIP NS=apps envsubst < deploy-using-alb.yaml | kubectl --kubeconfig capi-cluster.kubeconfig  apply -f -
