@@ -122,6 +122,8 @@ $ aws iam create-policy \
 
 # attach policy to role attached on instances cluster - manual but can be automated
 # aws load balancer controller
+# may be when the roles are created by cluster-api to the cluster. these ones are no delete when delete the cluster, then
+# if attach the AWSLoadBalancerControllerIAMPolicy in first instance, is not necessary re-attach this one.
 $ helm repo add eks https://aws.github.io/eks-charts
 
 # install cert-manager, go to cert-manager folder to read installation in README.md
