@@ -1,3 +1,4 @@
+```
 # get the latest version or change to a specific version
 VERSION=$(curl --silent "https://api.github.com/repos/argoproj-labs/argocd-autopilot/releases/latest" | grep '"tag_name"' | sed -E 's/.*"([^"]+)".*/\1/')
 
@@ -22,3 +23,4 @@ argocd-autopilot project create argocd-ingress
 
 # create app
 argocd-autopilot app create argocd-ingress --app github.com/andresanaya21/andresanaya21/argocd -p argocd-ingress --type kustomize
+```
