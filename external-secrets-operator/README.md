@@ -6,7 +6,7 @@ helm install external-secrets \
    external-secrets/external-secrets \
     -n external-secrets \
     --create-namespace \
-   --set installCRDs=false
+   --set installCRDs=true
 
 # echo -n 'KEYID' > ./access-key
 echo -n 'SECRETKEY' > ./secret-access-key
