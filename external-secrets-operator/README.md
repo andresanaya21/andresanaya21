@@ -8,7 +8,7 @@ helm install external-secrets \
     --create-namespace \
    --set installCRDs=true
 
-# KEYID AND SECRETKEY are the credentials of the user. This user must be rigt permissions
+# KEYID AND SECRETKEY are the credentials of the aws user. This user must be rigt permissions
 # to list secrets/parameter store. "secretsmanager:ListSecrets" "secretsmanager:GetSecretValue"
 # https://blog.container-solutions.com/tutorial-how-to-set-external-secrets-with-aws
 
