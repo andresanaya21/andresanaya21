@@ -11,6 +11,7 @@ helm install external-secrets \
 # KEYID AND SECRETKEY are the credentials of the aws user. This user must be rigt permissions
 # to list secrets/parameter store. "secretsmanager:ListSecrets" "secretsmanager:GetSecretValue"
 # https://blog.container-solutions.com/tutorial-how-to-set-external-secrets-with-aws
+# https://eminalemdar.medium.com/reversing-the-workflow-with-external-secrets-operators-push-secret-feature-f2a64f3db748
 
 $ echo -n 'AKIA2KIFHGHS' > ./access-key
 $ echo -n '1NL2ipVpUk7rFghjfshshrhnd' > ./secret-access-key
