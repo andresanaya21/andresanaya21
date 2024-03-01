@@ -13,7 +13,7 @@ spec:
       ports:
         - containerPort: 8080
       envFrom:
-#        - secretRef:
-#            name: secret-to-be-created 
         - secretRef:
-            name: secret-to-be-created-sm 
+            name: secret-to-be-created-pm
+        - secretRef:
+            name: secret-to-be-created-sm
