@@ -3,7 +3,11 @@ kubectl apply -f https://raw.githubusercontent.com/skooner-k8s/skooner/master/ku
 kubectl apply -f ingress-route-dashboard-http.yaml
 kubectl create serviceaccount skooner-sa -n kube-system
 kubectl create clusterrolebinding skooner-sa --clusterrole=cluster-admin --serviceaccount=kube-system:skooner-sa
+
+# create skooner's token.
 kubectl create token skooner-sa -n kube-system
+# increase the duration time of token
+kubectl create token skooner-sa -n kube-system --duration=720h
 
 # You will get an output with the token. type this one in the web http://monitor.sandbox.com to get access in the cluster
 
