@@ -24,3 +24,8 @@ argocd-autopilot project create argocd-ingress
 # create app
 argocd-autopilot app create argocd-ingress --app github.com/andresanaya21/andresanaya21/argocd -p argocd-ingress --type kustomize
 ```
+
+```
+# delete argocd application and pods, deployments, etc...
+argocd app delete <app-name> --cascade
+```
