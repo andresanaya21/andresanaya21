@@ -175,5 +175,5 @@ SERVICE_NAME=four SERVICE_TYPE=ClusterIP NS=apps envsubst < service-metallb.yaml
 $ SERVICE_NAME=first SERVICE_TYPE=NodePort NS=apps envsubst < deploy-using-alb.yaml | kubectl --kubeconfig capi-cluster.kubeconfig  apply -f -
 
 # another way to expose services from the outpost node to internal network (uma) is using LoadBalancer in each service. The MetalLB must be created with
-# ipPools and provide ips 10.11.28.0/24 subnetwork
+# ipPools and provide ips 10.11.29.0/24 subnetwork
 ```
