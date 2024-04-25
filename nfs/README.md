@@ -8,9 +8,9 @@
 on nfs-server:
 -----------
 
-# apt update && install nfs-kernel-server -y
+$ apt update && install nfs-kernel-server -y
 
-# cat /etc/idmapd.conf
+$ cat /etc/idmapd.conf
 [General]
 
 Verbosity = 0
@@ -22,20 +22,7 @@ Verbosity = 0
 Nobody-User = nobody
 Nobody-Group = nogroup
 
-# cat /etc/exports
-
-[General]
-
-Verbosity = 0
-# set your own domain here, if it differs from FQDN minus hostname
-# Domain = localdomain
-
-[Mapping]
-
-Nobody-User = nobody
-Nobody-Group = nogroup
-
-# cat /etc/exports
+$ cat /etc/exports
 
 
 # /etc/exports: the access control list for filesystems which may be exported
@@ -50,26 +37,26 @@ Nobody-Group = nogroup
 #
 /var/lib/longhorn  10.0.1.5/24(rw,sync,no_subtree_check)
 
-# chown -R nobody:nogroup /var/lib/longhorn
+$ chown -R nobody:nogroup /var/lib/longhorn
 
-# systemctl restart nfs-server
-# systemctl enable --now rpcbind nfs-server
+$ systemctl restart nfs-server
+$ systemctl enable --now rpcbind nfs-server
 
 on wokers (0-x):
 ----------
-# apt update && sudo apt install nfs-common -y
-# mkdir -p /mnt/nfs_longhorn
-# mount 10.0.1.5:/var/lib/longhorn /mnt/nfs_longhorn/
+$ apt update && sudo apt install nfs-common -y
+$ mkdir -p /mnt/nfs_longhorn
+$ mount 10.0.1.5:/var/lib/longhorn /mnt/nfs_longhorn/
 
 # add in /etc/fstab
 10.0.1.5:/var/lib/longhorn /mnt/nfs_longhorn nfs defaults 0 0
 
 on local:
 ----------
-# NFS_SERVER=10.0.1.5
-# NFS_EXPORT_PATH=/var/lib/longhorn
+$ NFS_SERVER=10.0.1.5
+$ NFS_EXPORT_PATH=/var/lib/longhorn
 
-# helm -n  nfs-provisioner install nfs-provisioner-01 nfs-subdir-external-provisioner/nfs-subdir-external-provisioner \
+$ helm -n  nfs-provisioner install nfs-provisioner-01 nfs-subdir-external-provisioner/nfs-subdir-external-provisioner \
     --set nfs.server=$NFS_SERVER \
     --set nfs.path=$NFS_EXPORT_PATH \
     --set storageClass.defaultClass=true \
