@@ -56,6 +56,8 @@ on local:
 $ NFS_SERVER=10.0.1.5
 $ NFS_EXPORT_PATH=/var/lib/longhorn
 
+$ helm repo add nfs-subdir-external-provisioner https://kubernetes-sigs.github.io/nfs-subdir-external-provisioner/
+
 $ helm -n  nfs-provisioner install nfs-provisioner-01 nfs-subdir-external-provisioner/nfs-subdir-external-provisioner \
     --set nfs.server=$NFS_SERVER \
     --set nfs.path=$NFS_EXPORT_PATH \
