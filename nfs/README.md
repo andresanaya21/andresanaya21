@@ -64,6 +64,8 @@ $ helm -n  nfs-provisioner install nfs-provisioner-01 nfs-subdir-external-provis
     --set storageClass.defaultClass=true \
     --set replicaCount=1 \
     --set storageClass.name=nfs-01 \
-   --set storageClass.provisionerName=nfs-provisioner-01  
+    --set storageClass.provisionerName=nfs-provisioner-01 \
+    --kubeconfig KUBECONFIG_PATH \
+    --create-namespace 
    
 ```
