@@ -1,0 +1,44 @@
+apiVersion: v1
+data:
+  Corefile: |
+    .:53 {
+        errors
+        health {
+            lameduck 5s
+        }
+        ready
+        kubernetes cluster.local cluster.local in-addr.arpa ip6.arpa {
+            pods insecure
+            fallthrough in-addr.arpa ip6.arpa
+            ttl 30
+        }
+        prometheus 0.0.0.0:9153
+        forward . /etc/resolv.conf
+        cache 30
+        loop
+        debug
+        reload
+        loadbalance
+    }
+  lighthouse.server: |
+    clusterset.local:53 {
+        forward . 10.99.18.201
+    }
+kind: ConfigMap
+metadata:
+  annotations:
+    meta.helm.sh/release-name: rke2-coredns
+    meta.helm.sh/release-namespace: kube-system
+  creationTimestamp: "2024-05-14T12:10:05Z"
+  labels:
+    app.kubernetes.io/instance: rke2-coredns
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: rke2-coredns
+    helm.sh/chart: rke2-coredns-1.29.002
+    k8s-app: kube-dns
+    kubernetes.io/cluster-service: "true"
+    kubernetes.io/name: CoreDNS
+  name: rke2-coredns-rke2-coredns
+  namespace: kube-system
+  resourceVersion: "16199"
+  uid: 08859dae-df24-44fe-b288-086231df467d

@@ -1,0 +1,8 @@
+disable:
+  - rke2-ingress-nginx
+cloud-provider-name: external
+tls-san:
+  - 172.0.6.213 
+  - ip-172-0-6-213.eu-west-3.compute.internal 
+cni: calico
+cluster-cidr: "10.43.0.0/16"
