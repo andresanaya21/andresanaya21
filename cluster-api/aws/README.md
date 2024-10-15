@@ -21,6 +21,10 @@ curl -L https://github.com/kubernetes-sigs/cluster-api-provider-aws/releases/dow
 
 chmod +x clusterawsadm
 
+# check the ami available
+clusterawsadm ami list --kubernetes-version=v1.18.12 --os=ubuntu-20.04  --region=eu-west-3
+clusterawsadm ami list # it retrieves all amis available
+
 install clusterawsadm /usr/local/bin/clusterawsadm
 
 export AWS_REGION=eu-west-3 # This is used to help encode your environment variables
