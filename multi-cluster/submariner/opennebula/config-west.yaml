@@ -1,0 +1,8 @@
+disable:
+  - rke2-ingress-nginx
+tls-san:
+  - rke2-mc-west
+  - 10.95.82.210
+cni: calico
+cluster-cidr: "10.44.0.0/16"
+service-cidr: "10.45.0.0/16"

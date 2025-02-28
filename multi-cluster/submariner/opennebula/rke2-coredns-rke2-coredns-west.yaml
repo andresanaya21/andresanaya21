@@ -1,44 +1,48 @@
 apiVersion: v1
 data:
-  Corefile: |
+  Corefile: |-
     .:53 {
         errors
         health {
             lameduck 5s
         }
         ready
-        kubernetes cluster.local cluster.local in-addr.arpa ip6.arpa {
+        kubernetes  cluster.local  cluster.local in-addr.arpa ip6.arpa {
             pods insecure
             fallthrough in-addr.arpa ip6.arpa
             ttl 30
         }
-        prometheus 0.0.0.0:9153
-        forward . /etc/resolv.conf
-        cache 30
+        prometheus  0.0.0.0:9153
+        forward  . /etc/resolv.conf
+        cache  30
         loop
-        debug
         reload
         loadbalance
     }
+    # added manually to service discovery works. To configure entries outside the CoreFile, you must to do that: https://coredns.io/2017/05/08/custom-dns-entries-for-kubernetes/
+    # and ligthhouse doest do well it
+    clusterset.local:53 {
+        forward . 10.45.7.70
+    }
   lighthouse.server: |
     clusterset.local:53 {
-        forward . 10.1.146.45
+        forward . 10.45.7.70
     }
 kind: ConfigMap
 metadata:
   annotations:
     meta.helm.sh/release-name: rke2-coredns
     meta.helm.sh/release-namespace: kube-system
-  creationTimestamp: "2024-05-14T11:52:57Z"
+  creationTimestamp: "2025-02-27T09:43:02Z"
   labels:
     app.kubernetes.io/instance: rke2-coredns
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: rke2-coredns
-    helm.sh/chart: rke2-coredns-1.29.002
+    helm.sh/chart: rke2-coredns-1.36.102
     k8s-app: kube-dns
     kubernetes.io/cluster-service: "true"
     kubernetes.io/name: CoreDNS
   name: rke2-coredns-rke2-coredns
   namespace: kube-system
-  resourceVersion: "20008"
-  uid: cf5daf99-a0e2-4fbd-b7a9-0c1b4379aaa5
+  resourceVersion: "109361"
+  uid: 4c2d570f-d182-4812-9f7b-4f60c27469e1
