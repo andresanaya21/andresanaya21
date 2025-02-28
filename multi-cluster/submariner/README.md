@@ -20,14 +20,18 @@ The setup includes:
 | **East**    | [OneFlow East](https://one.discovery.hi.inet/#oneflow-services-tab/243)  | `10.95.82.210` |
 
 ### Access Credentials
-- **OpenNebula Access:**
-  - `User: root`
-  - `Password: oneKEpass`
 - **Cluster SSH Access:**
   - `User: root`
   - `Password: labpassword`
 
 ---
+## **Network Topology Diagram**
+The following `.drawio` file provides a visual representation of the network topology and cluster connectivity.
+
+**[Topology Diagram](opennebula/multicluster.drawio)**
+
+---
+
 ## **1. Install RKE2 on All Clusters**
 ### **1.1 Pre-Installation Setup**
 Run these commands on `broker`, `west`, and `east` clusters:
