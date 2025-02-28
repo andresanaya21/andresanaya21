@@ -30,6 +30,9 @@ The following `.drawio` file provides a visual representation of the network top
 
 **[Topology Diagram](opennebula/multicluster.drawio)**
 
+![Topology](multicluster.png)
+
+
 ---
 
 ## **1. Install RKE2 on All Clusters**
