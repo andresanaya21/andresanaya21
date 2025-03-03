@@ -257,7 +257,72 @@ kubectl run -n nginx-test tmp-shell --rm -i --tty --image quay.io/submariner/net
 tmp-shell-pod$ wget --spider http://nginx.nginx-test.svc.clusterset.local:8080
 
 Connecting to nginx.nginx-test.svc.clusterset.local:8080 (10.45.160.84:8080)
+
 ```
+
+### **5.5 Test Connectivity from East Cluster using LoxiLB**
+
+```sh
+kctx west
+k apply -f loxilb/loxi-nobgp.yaml
+k apply -f loxilb/kube-loxilb.yaml
+k apply -f loxilb/iperf3-server-loxilb.yaml
+subctl export service --namespace nginx-test nginx
+
+kctx east
+k apply -f iperf3-client.yaml
+k exec -it iperf3-client-5f47757b5f-mfsnl -- iperf3 -c iperf3-server.default.svc.clusterset.local -p 5201
+Connecting to host 10.95.82.149, port 5201
+[  5] local 10.98.23.121 port 38434 connected to 10.95.82.149 port 5201
+[ ID] Interval           Transfer     Bitrate         Retr  Cwnd
+[  5]   0.00-1.00   sec   994 MBytes  8.33 Gbits/sec   92   2.86 MBytes       
+[  5]   1.00-2.00   sec  1.43 GBytes  12.3 Gbits/sec    3   2.87 MBytes       
+[  5]   2.00-3.00   sec  1.77 GBytes  15.2 Gbits/sec    0   2.92 MBytes       
+[  5]   3.00-4.00   sec  1.77 GBytes  15.2 Gbits/sec    0   2.92 MBytes       
+[  5]   4.00-5.00   sec  1.86 GBytes  16.0 Gbits/sec    0   2.92 MBytes       
+[  5]   5.00-6.00   sec  1.50 GBytes  12.9 Gbits/sec    0   2.92 MBytes       
+[  5]   6.00-7.00   sec  2.01 GBytes  17.3 Gbits/sec    0   2.93 MBytes       
+[  5]   7.00-8.00   sec  2.28 GBytes  19.6 Gbits/sec   58   2.95 MBytes       
+[  5]   8.00-9.00   sec  1.70 GBytes  14.6 Gbits/sec    0   2.95 MBytes       
+[  5]   9.00-10.00  sec  1.70 GBytes  14.6 Gbits/sec    0   2.95 MBytes       
+- - - - - - - - - - - - - - - - - - - - - - - - -
+[ ID] Interval           Transfer     Bitrate         Retr
+[  5]   0.00-10.00  sec  17.0 GBytes  14.6 Gbits/sec  153             sender
+[  5]   0.00-10.00  sec  17.0 GBytes  14.6 Gbits/sec                  receiver
+
+```
+
+### **5.6 Test Connectivity from East Cluster using iperf3**
+
+```sh
+kctx west
+k apply -f iperf3-server-loxilb.yaml
+subctl export service --namespace default iperf3-server
+
+kctx east
+k apply -f iperf3-client.yaml
+k exec -it iperf3-client-5f47757b5f-mfsnl -- iperf3 -c iperf3-server.default.svc.clusterset.local -p 5201
+Connecting to host iperf3-server.default.svc.clusterset.local, port 5201
+[  5] local 10.98.23.121 port 51798 connected to 10.45.71.190 port 5201
+[ ID] Interval           Transfer     Bitrate         Retr  Cwnd
+[  5]   0.00-1.03   sec  32.4 MBytes   265 Mbits/sec   19    200 KBytes       
+[  5]   1.03-2.00   sec  34.3 MBytes   294 Mbits/sec    0    226 KBytes       
+[  5]   2.00-3.03   sec  37.1 MBytes   302 Mbits/sec   20    264 KBytes       
+[  5]   3.03-4.00   sec  41.9 MBytes   363 Mbits/sec    1    346 KBytes       
+[  5]   4.00-5.00   sec  45.2 MBytes   379 Mbits/sec    1    423 KBytes       
+
+[  5]   5.00-6.00   sec  49.4 MBytes   414 Mbits/sec   26    467 KBytes       
+[  5]   6.00-7.01   sec  39.9 MBytes   333 Mbits/sec    3    472 KBytes       
+[  5]   7.01-8.02   sec  57.6 MBytes   478 Mbits/sec    2    479 KBytes       
+[  5]   8.02-9.02   sec  53.0 MBytes   446 Mbits/sec    2    494 KBytes       
+[  5]   9.02-10.00  sec  53.8 MBytes   457 Mbits/sec    0    494 KBytes       
+- - - - - - - - - - - - - - - - - - - - - - - - -
+[ ID] Interval           Transfer     Bitrate         Retr
+[  5]   0.00-10.00  sec   444 MBytes   373 Mbits/sec   74             sender
+[  5]   0.00-10.01  sec   444 MBytes   373 Mbits/sec                  receiver
+
+```
+
 
 ---
 ## **6. Uninstall Submariner**
