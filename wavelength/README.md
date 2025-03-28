@@ -27,6 +27,15 @@ aws ec2 run-instances --region eu-west-3 \
     --key-name tactile5g \
     --iam-instance-profile Name=ec2-edge-20240906094442237200000001
 
+# example including security group:
+aws ec2 run-instances --region eu-west-3 \
+    --network-interfaces "DeviceIndex=0,AssociateCarrierIpAddress=true,SubnetId=subnet-053889d9c078138a1,Groups=sg-0e2dcc06c273036d1" \
+    --image-id ami-04a92520784b93e73 --instance-type t3.medium \
+    --block-device-mappings '[{"DeviceName":"/dev/sda1","Ebs":{"VolumeSize":80,"VolumeType":"gp2"}}]' \
+    --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=cluster-researcher-worker-2}]' \
+    --key-name researcher-aws \
+    --iam-instance-profile Name=cluster-researcher-worker-1-20250328112848949700000009
+
 ## if issues with iam-instance-profile
 aws iam list-instance-profiles
 ### if ima instance profile not created:
