@@ -52,3 +52,12 @@ aws iam add-role-to-instance-profile --instance-profile-name ec2-edge-2024090609
 aws ec2 delete-carrier-gateway --carrier-gateway-id cagw-0c811c8a95732a357
 
 ```
+
+---
+# Important!!
+
+```sh
+If you mean to use LoxiLb in EC2 instances:
+    - Stop Change Source / destination check: In EC2 instance, select Actions->Change Source / destination check->Source / destination checking and check the Stop box
+    - modify the security groups: Add a new rule in EC2 security group allowing the internal network. 
+```
