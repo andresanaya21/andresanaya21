@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: latency-app-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: latency-app
+  template:
+    metadata:
+      labels:
+        app: latency-app
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: ip-192-168-4-250.eu-west-3.compute.internal
+      imagePullSecrets:
+        - name: harbor-secret
+      containers:
+      - name: latency-app
+        imagePullPolicy: Always
+        image: dockerhub.mobilesandbox.cloud:9443/tactile5g/latency-app:latest
+        ports:
+        - containerPort: 5000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: latency-app-service
+spec:
+  selector:
+    app: latency-app
+  ports:
+    - protocol: TCP
+      port: 5000
+      targetPort: 5000
+  type: NodePort

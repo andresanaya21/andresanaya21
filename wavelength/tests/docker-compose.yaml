@@ -1,0 +1,12 @@
+services:
+  nginx-service:
+    image: nginx:latest
+    ports:
+      - "8181:80"
+  latency-app:
+    build:
+      context: ./latency-app
+    ports:
+      - "5000:5000"
+    depends_on:
+      - nginx-service
