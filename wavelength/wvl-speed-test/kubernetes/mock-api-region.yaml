@@ -16,7 +16,7 @@ spec:
         kubernetes.io/hostname: ip-172-2-4-237.eu-west-3.compute.internal 
       containers:
       - name: mock-api-region
-        image: wvl-speed-test-mock-api-region:latest
+        image: dockerhub.mobilesandbox.cloud:9443/tactile5g/wvl-speed-test-mock-api-region:latest
         ports:
         - containerPort: 8000
 
