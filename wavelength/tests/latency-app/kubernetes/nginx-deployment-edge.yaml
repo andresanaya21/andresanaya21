@@ -1,7 +1,15 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: edge 
+
+---
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: nginx-deployment
+  namespace: edge
 spec:
   replicas: 1
   selector:
@@ -13,7 +21,7 @@ spec:
         app: nginx
     spec:
       nodeSelector:
-        kubernetes.io/hostname: ip-192-168-4-250.eu-west-3.compute.internal 
+        kubernetes.io/hostname: ip-172-2-4-237.eu-west-3.compute.internal 
       containers:
       - name: nginx
         image: nginx:latest
@@ -26,6 +34,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: nginx-service
+  namespace: edge
 spec:
   selector:
     app: nginx
