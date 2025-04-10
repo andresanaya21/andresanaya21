@@ -1,0 +1,43 @@
+version: "3.9"
+
+services:
+  # Region API instance
+  mock-api-region:
+    build: ./mock_api
+    container_name: mock_api_region
+    ports:
+      - "8001:8000"
+    environment:
+      - ZONE=region
+
+  # Wavelength API instance
+  mock-api-wavelength:
+    build: ./mock_api
+    container_name: mock_api_wavelength
+    ports:
+      - "8002:8000"
+    environment:
+      - ZONE=wavelength
+
+  # CLI tool (interactive use)
+  cli-tool:
+    build: ./cli_tool
+    container_name: cli_tool
+    stdin_open: true
+    tty: true
+    depends_on:
+      - mock-api-region
+      - mock-api-wavelength
+
+  # Web UI (Streamlit)
+  web-ui:
+    build: ./web_ui
+    container_name: web_ui
+    ports:
+      - "8501:8501"
+    depends_on:
+      - mock-api-region
+      - mock-api-wavelength
+    environment:
+      - REGION_API=http://mock-api-region:8000/api/v1
+      - EDGE_API=http://mock-api-wavelength:8000/api/v1
