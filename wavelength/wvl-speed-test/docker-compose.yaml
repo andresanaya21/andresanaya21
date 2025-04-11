@@ -23,11 +23,17 @@ services:
   cli-tool:
     build: ./cli_tool
     container_name: cli_tool
-    stdin_open: true
-    tty: true
     depends_on:
       - mock-api-region
       - mock-api-wavelength
+    environment:
+#      - BASE_URL_REGION=http://mock-api-region:8000/api/v1
+      - BASE_URL_WAVELENGTH=http://80.26.149.238:30635/api/v1
+#      - BASE_URL_WAVELENGTH=http://mock-api-wavelength:8000/api/v1
+      - BASE_URL_REGION=http://nlb-public-e8db26b18c16da25.elb.eu-west-3.amazonaws.com:31021/api/v1
+    entrypoint: ""
+    stdin_open: true
+    tty: true
 
   # Web UI (Streamlit)
   web-ui:
