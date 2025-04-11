@@ -45,5 +45,7 @@ services:
       - mock-api-region
       - mock-api-wavelength
     environment:
-      - REGION_API=http://mock-api-region:8000/api/v1
-      - EDGE_API=http://mock-api-wavelength:8000/api/v1
+#      - REGION_API=http://mock-api-region:8000/api/v1
+#      - EDGE_API=http://mock-api-wavelength:8000/api/v1
+      - REGION_API=http://nlb-public-e8db26b18c16da25.elb.eu-west-3.amazonaws.com:31021/api/v1
+      - EDGE_API=http://80.26.149.238:30635/api/v1
