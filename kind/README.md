@@ -32,6 +32,9 @@ nodes:
 # create a cluster
 kind create cluster --config kind-config.yaml
 
+# get the kubeconfig
+sudo kind get kubeconfig --name kind > kind-kubeconfig.yaml
+
 # configure nodes
 apiVersion: apps/v1
 kind: Deployment
