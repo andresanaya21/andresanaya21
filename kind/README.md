@@ -27,7 +27,7 @@ nodes:
         containerPath: /path/in/container
     extraPortMappings:
       - containerPort: 80
-        hostPort: 8080
+        hostPort: 9080
 
 # create a cluster
 kind create cluster --config kind-config.yaml
