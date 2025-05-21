@@ -2,11 +2,11 @@ KubeAI
 ----
 
 ```sh
-kind create cluster # OR: minikube start
+kind create cluster -n kubeai # OR: minikube start
 
 helm repo add kubeai https://www.kubeai.org
 helm repo update
-helm install kubeai kubeai/kubeai --wait --timeout 10m
+helm install kubeai kubeai/kubeai --wait --timeout 10m --kubeconfig kubeai.kubeconfig
 
 cat <<EOF > kubeai-models.yaml
 catalog:
@@ -27,11 +27,10 @@ catalog:
 #    enabled: true
 EOF
 
-helm upgrade --install kubeai-models kubeai/models \
-    -f ./kubeai-models.yaml --kubeconfig kind-kubeconfig.yaml
+helm upgrade --install kubeai-models kubeai/models -f ./kubeai-models.yaml --kubeconfig kubeai.kubeconfig
 
 
-kubectl get models dpsek-r1
+kubectl get models dpsek-r1 --kubeconfig kubeai.kubeconfig 
 
 k --kubeconfig kind-kubeconfig.yaml port-forward svc/open-webui 8000:80 
 
@@ -51,7 +50,7 @@ EOF
 
 
 helm upgrade --install kubeai-models kubeai/models \
-    -f ./models-helm-values.yaml --kubeconfig kind-kubeconfig.yaml
+    -f ./models-helm-values.yaml --kubeconfig kubeai.kubeconfig
 
 
 pip install langchain_openai
@@ -68,7 +67,7 @@ LangTrace using KubeAI
 ```sh
 helm repo add langtrace https://Scale3-Labs.github.io/langtrace-helm-chart 
 helm repo update
-helm install langtrace langtrace/langtrace --kubeconfig kind-kubeconfig.yaml
+helm install langtrace langtrace/langtrace --kubeconfig kubeai.kubeconfig
 
 cat <<EOF > kubeai-models.yaml
 catalog:
@@ -78,7 +77,7 @@ catalog:
 EOF
 
 helm install kubeai-models kubeai/models \
-    -f ./kubeai-models.yaml
+    -f ./kubeai-models.yaml --kubeconfig kubeai.kubeconfig
 
 python3 -m venv .venv
 source .venv/bin/activate
