@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    meta.helm.sh/release-name: open5gs
+    meta.helm.sh/release-namespace: open5gs
+  labels:
+    app.kubernetes.io/instance: open5gs
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: amf
+  name: open5gs-amf-ngap
+  namespace: open5gs
+spec:
+  ports:
+  - name: ngap
+    nodePort: 38412
+    port: 38412
+    protocol: SCTP
+    targetPort: ngap
+  selector:
+    app.kubernetes.io/instance: open5gs
+    app.kubernetes.io/name: amf
+  type: NodePort

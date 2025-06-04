@@ -1,0 +1,288 @@
+# 4G
+hss:
+  enabled: false
+  mongodb:
+    enabled: false
+mme:
+  enabled: false
+pcrf:
+  enabled: false
+  mongodb:
+    enabled: false
+sgwc:
+  enabled: false
+sgwu:
+  enabled: false
+
+# 5G
+amf:
+  enabled: true
+  config:
+    #logLevel: debug
+    sbi:
+      client:
+        nrf:
+          enabled: true
+        scp:
+          enabled: false
+    guamiList:
+      - plmn_id:
+          mcc: "999"
+          mnc: "99"
+        amf_id:
+          region: 2
+          set: 1
+    taiList:
+      - plmn_id:
+          mcc: "999"
+          mnc: "99"
+        tac: [ 200 ]
+    plmnList:
+      - plmn_id:
+          mcc: "999"
+          mnc: "99"
+        s_nssai:
+          - sst: 1
+            sd: "0xabcdeb"
+    networkName: "open5gs"
+  services:
+    ngap:
+      type: NodePort
+    metrics:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9090"
+        prometheus.io/path: "/metrics"
+  metrics:
+    enabled: true
+  # nodeSelector: 
+  #  kubernetes.io/hostname: ip-182-2-1-194.eu-west-3.compute.internal
+
+ausf:
+  enabled: true
+  config:
+    sbi:
+      client:
+        nrf:
+          enabled: true
+        scp:
+          enabled: false
+  # nodeSelector: 
+  #  kubernetes.io/hostname: ip-182-2-1-194.eu-west-3.compute.internal
+
+bsf:
+  enabled: true
+  config:
+    sbi:
+      client:
+        nrf:
+          enabled: true
+        scp:
+          enabled: false
+  # nodeSelector: 
+  #  kubernetes.io/hostname: ip-182-2-1-194.eu-west-3.compute.internal
+
+nrf:
+  enabled: true
+  config:
+    servingList:
+      - plmn_id:
+          mcc: "999"
+          mnc: "99"
+  # nodeSelector: 
+  #  kubernetes.io/hostname: ip-182-2-1-194.eu-west-3.compute.internal
+
+nssf:
+  enabled: true
+  config:
+    sbi:
+      client:
+        nrf:
+          enabled: true
+        scp:
+          enabled: false
+    nsiList:
+    - uri: ""
+      sst: 1
+      sd: "0xabcdeb"
+  # nodeSelector: 
+  #  kubernetes.io/hostname: ip-182-2-1-194.eu-west-3.compute.internal
+
+pcf:
+  enabled: true
+  config:
+    sbi:
+      client:
+        nrf:
+          enabled: true
+        scp:
+          enabled: false
+  services:
+    metrics:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9090"
+        prometheus.io/path: "/metrics"
+  metrics:
+    enabled: true
+  # nodeSelector: 
+  #  kubernetes.io/hostname: ip-182-2-1-194.eu-west-3.compute.internal
+
+scp:
+  enabled: false
+
+
+smf:
+  enabled: true
+  config:
+    sbi:
+      client:
+        nrf:
+          enabled: true
+        scp:
+          enabled: false
+    pcrf:
+      enabled: false
+    subnetList:
+      - subnet: "10.45.0.0/24"
+        gateway: "10.45.0.1"
+  services:
+    metrics:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9090"
+        prometheus.io/path: "/metrics"
+  metrics:
+    enabled: true
+  # nodeSelector: 
+  #  kubernetes.io/hostname: ip-182-2-1-194.eu-west-3.compute.internal
+
+udm:
+  enabled: true
+  config:
+    sbi:
+      client:
+        nrf:
+          enabled: true
+        scp:
+          enabled: false
+  # nodeSelector: 
+  #  kubernetes.io/hostname: ip-182-2-1-194.eu-west-3.compute.internal
+
+udr:
+  enabled: true
+  config:
+    sbi:
+      client:
+        nrf:
+          enabled: true
+        scp:
+          enabled: false
+  mongodb:
+    enabled: false
+  # nodeSelector: 
+  #  kubernetes.io/hostname: ip-182-2-1-194.eu-west-3.compute.internal
+upf:
+  enabled: true
+  config:
+    upf:
+      gtpu:
+        advertise: "51.44.96.15" #advertise:  "15.236.234.128"
+#    subnetList:
+#      - subnet: "10.45.0.0/24"
+#        gateway: "10.45.0.1"
+#        dnn: internet
+#        dev: ogstun
+#        createDev: true
+#        enableNAT: true
+  services:
+    gtpu:
+      type: NodePort 
+  #podAnnotations: {k8s.v1.cni.cncf.io/networks:  '[ "nad-macvlan3004}", "nad-macvlan3039}" ]'}
+    metrics:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9090"
+        prometheus.io/path: "/metrics"
+  metrics:
+    enabled: true
+  #podAnnotations: {k8s.v1.cni.cncf.io/networks: nad-macvlan3039 }
+  # nodeSelector: 
+  #  kubernetes.io/hostname: ip-182-2-1-194.eu-west-3.compute.internal
+
+
+# Others
+dbURI: "mongodb://{{ .Release.Name }}-mongodb/open5gs"
+
+mongodb:
+  enabled: true
+  persistence:
+    enabled: false
+  auth:
+    enabled: false
+  #livenessProbe:
+    #enabled: false #
+    # initialDelaySeconds: 10
+    #periodSeconds: 10 #
+    # timeoutSeconds: 20
+    # failureThreshold: 10
+    # successThreshold: 1
+  #readinessProbe:
+    #enabled: false
+    # initialDelaySeconds: 10
+    #periodSeconds: 10
+    # timeoutSeconds: 20
+    # failureThreshold: 10
+    # successThreshold: 1
+  # nodeSelector: 
+  #  kubernetes.io/hostname: ip-182-2-1-194.eu-west-3.compute.internal
+
+populate:
+  enabled: true
+  image:
+    registry: docker.io
+    repository: gradiant/open5gs-dbctl
+    tag: 0.10.3
+    pullPolicy: IfNotPresent
+  initCommands: #[]
+  # example of initCommands:
+  - open5gs-dbctl add_ue_with_slice 999990000000001 465B5CE8B199B49FAA5F0A2EE238A6BC E8ED289DEBA952E4283B54E88E6183CA internet 1 abcdeb
+  - open5gs-dbctl add_ue_with_slice 999990000000002 2CD04FB932D7DDCD77EE3CEAB9E0F1E5 8B1E9B7DAEAE806A60E015CD5A8F59C6 internet 1 abcdeb
+  - open5gs-dbctl add_ue_with_slice 999990000000008 00112233445566778899AABBCCDDEEFF 00112233445566778899AABBCCDDEEFF internet 1 abcdeb
+  - open5gs-dbctl add_ue_with_slice 999990000000104 2CD04FB932D7DDCD77EE3CEAB9E0F1E5 8B1E9B7DAEAE806A60E015CD5A8F59C6 internet 1 abcdeb
+  - open5gs-dbctl add_ue_with_slice 999990000000010 465B5CE8B199B49FAA5F0A2EE238A6BC E8ED289DEBA952E4283B54E88E6183CA internet 1 abcdeb
+  - open5gs-dbctl add_ue_with_slice 999990000000011 465B5CE8B199B49FAA5F0A2EE238A6BC E8ED289DEBA952E4283B54E88E6183CA internet 1 abcdeb
+  - open5gs-dbctl add_ue_with_slice 999990000000012 465B5CE8B199B49FAA5F0A2EE238A6BC E8ED289DEBA952E4283B54E88E6183CA internet 1 abcdeb
+  - open5gs-dbctl add_ue_with_slice 999990000000013 465B5CE8B199B49FAA5F0A2EE238A6BC E8ED289DEBA952E4283B54E88E6183CA internet 1 abcdeb
+  - open5gs-dbctl add_ue_with_slice 999990000000014 465B5CE8B199B49FAA5F0A2EE238A6BC E8ED289DEBA952E4283B54E88E6183CA internet 1 abcdeb
+  - open5gs-dbctl add_ue_with_slice 999990000000015 465B5CE8B199B49FAA5F0A2EE238A6BC E8ED289DEBA952E4283B54E88E6183CA internet 1 abcdeb
+  - open5gs-dbctl add_ue_with_slice 999990000000016 465B5CE8B199B49FAA5F0A2EE238A6BC E8ED289DEBA952E4283B54E88E6183CA internet 1 abcdeb
+  - open5gs-dbctl add_ue_with_slice 999990000000017 465B5CE8B199B49FAA5F0A2EE238A6BC E8ED289DEBA952E4283B54E88E6183CA internet 1 abcdeb
+  - open5gs-dbctl add_ue_with_slice 999990000000018 465B5CE8B199B49FAA5F0A2EE238A6BC E8ED289DEBA952E4283B54E88E6183CA internet 1 abcdeb
+  - open5gs-dbctl add_ue_with_slice 999990000000019 465B5CE8B199B49FAA5F0A2EE238A6BC E8ED289DEBA952E4283B54E88E6183CA internet 1 abcdeb
+  - open5gs-dbctl add_ue_with_slice 999990000000020 465B5CE8B199B49FAA5F0A2EE238A6BC E8ED289DEBA952E4283B54E88E6183CA internet 1 abcdeb
+  - open5gs-dbctl add_ue_with_slice 999990000000021 465B5CE8B199B49FAA5F0A2EE238A6BC E8ED289DEBA952E4283B54E88E6183CA internet 1 abcdeb
+  - open5gs-dbctl add_ue_with_slice 999990000000022 465B5CE8B199B49FAA5F0A2EE238A6BC E8ED289DEBA952E4283B54E88E6183CA internet 1 abcdeb
+  - open5gs-dbctl add_ue_with_slice 999990000000023 465B5CE8B199B49FAA5F0A2EE238A6BC E8ED289DEBA952E4283B54E88E6183CA internet 1 abcdeb
+  - open5gs-dbctl add_ue_with_slice 999990000000024 465B5CE8B199B49FAA5F0A2EE238A6BC E8ED289DEBA952E4283B54E88E6183CA internet 1 abcdeb
+  - open5gs-dbctl add_ue_with_slice 999990000000025 465B5CE8B199B49FAA5F0A2EE238A6BC E8ED289DEBA952E4283B54E88E6183CA internet 1 abcdeb
+  - open5gs-dbctl add_ue_with_slice 999990000000026 465B5CE8B199B49FAA5F0A2EE238A6BC E8ED289DEBA952E4283B54E88E6183CA internet 1 abcdeb
+  - open5gs-dbctl add_ue_with_slice 999990000000027 465B5CE8B199B49FAA5F0A2EE238A6BC E8ED289DEBA952E4283B54E88E6183CA internet 1 abcdeb
+  - open5gs-dbctl add_ue_with_slice 999990000000028 465B5CE8B199B49FAA5F0A2EE238A6BC E8ED289DEBA952E4283B54E88E6183CA internet 1 abcdeb
+  - open5gs-dbctl add_ue_with_slice 999990000000029 465B5CE8B199B49FAA5F0A2EE238A6BC E8ED289DEBA952E4283B54E88E6183CA internet 1 abcdeb
+  - open5gs-dbctl add_ue_with_slice 999990000000103 2CD04FB932D7DDCD77EE3CEAB9E0F1E5 8B1E9B7DAEAE806A60E015CD5A8F59C6 internet 1 abcdeb
+
+
+  #- open5gs-dbctl static_ip 999990000000010 10.45.0.10
+  # nodeSelector: 
+  #  kubernetes.io/hostname: ip-182-2-1-194.eu-west-3.compute.internal
+
+
+webui:
+  enabled: true
+  ingress:
+    enabled: false
+    ingressClassName: nginx
+    hostname: "open5gs-rke2-region-spain.int"
+  # nodeSelector: 
+  #  kubernetes.io/hostname: ip-182-2-1-194.eu-west-3.compute.internal

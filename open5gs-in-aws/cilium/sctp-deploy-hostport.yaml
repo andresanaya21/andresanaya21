@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sctp-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sctp
+  template:
+    metadata:
+      labels:
+        app: sctp
+    spec:
+      hostNetwork: true
+      containers:
+      - name: sctp
+        imagePullPolicy: Always
+        image: aweimeow/sctp-server
+        command: ["/bin/bash", "-xc"]
+        args: 
+          - python example/run.py
+        ports:
+        - containerPort: 9999 
+          protocol: SCTP
