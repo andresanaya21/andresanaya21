@@ -208,6 +208,31 @@ andres
 Thanks for calling, andres. Bye, now.
 root@dis-andres-origami-bridge:/home/researcher#
 
+# iperf
+sudo apt update
+sudo apt install iperf3 -y
+
+# server
+iperf3 -s -B 10.45.0.11 
+iperf3 -s --bind-dev uesimtun0
+
+# client
+iperf3 -c 10.45.0.11
+iperf3 -c 10.45.0.11 -B 10.45.0.12
+iperf3 -c 10.45.0.11 --bind-dev uesimtun0
+
+# using nc
+# using nc in mode server tcp
+nc -l -s 10.45.0.16 -p 8080
+
+# using nc in mode client tcp
+nc 10.45.0.16 8080
+
+# using nc in mode server udp
+nc -u -l -s 10.45.0.17 -p 8080
+
+# using cn in mode client udp
+nc -u 10.45.0.17 8080
 ```
 
 ```sh
