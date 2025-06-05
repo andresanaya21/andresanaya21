@@ -185,6 +185,7 @@ udr:
 upf:
   enabled: true
   config:
+    logLevel: debug
     upf:
       gtpu:
         advertise: "15.236.113.156" #advertise:  "15.236.234.128"
