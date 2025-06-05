@@ -220,6 +220,8 @@ iperf3 -s --bind-dev uesimtun0
 iperf3 -c 10.45.0.11
 iperf3 -c 10.45.0.11 -B 10.45.0.12
 iperf3 -c 10.45.0.11 --bind-dev uesimtun0
+iperf3 -c 10.45.0.17 -u -b 10M -l 1200 --bind-dev uesimtun0 # -l sets packet size to avoid fragmentation, -b raises the bandwidth target
+iperf3 -c 10.45.0.17 -u -b 10M -l 1200 --bind-dev uesimtun0 -w 512 # -w is the option for the TCP/UDP socket buffer size (both send and receive, depending on context)
 
 # using nc
 # using nc in mode server tcp
