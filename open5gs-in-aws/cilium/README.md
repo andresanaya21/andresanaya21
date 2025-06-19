@@ -21,7 +21,8 @@ kube-apiserver-arg:
 EOF
 
 curl -sfL https://get.rke2.io | sudo sh -
-#curl -sfL https://get.rke2.io | sudo INSTALL_RKE2_VERSION="v1.31.8+rke2r1" sh -
+#curl -sfL https://get.rke2.io | sudo INSTALL_RKE2_VERSION="v1.27.16+rke2r2" sh - # to the master
+#curl -sfL https://get.rke2.io | sudo INSTALL_RKE2_VERSION="v1.27.16+rke2r2" INSTALL_RKE2_TYPE="agent" sh - # to the worker
 sudo systemctl enable rke2-server.service
 sudo systemctl start rke2-server.service
 
