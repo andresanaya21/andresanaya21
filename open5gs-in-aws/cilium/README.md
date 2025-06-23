@@ -79,12 +79,14 @@ helm upgrade --install cilium cilium/cilium \
   --set operator.replicas=1 \
   --set sctp.enabled=true \
   --set enableIPv4Masquerade=true \
-  --set eni.subnet-ids='{subnet-0ddaa67fa7580e39a,subnet-0252c0d024de99979}'
-
+  --set eni.subnetTagsFilter=kubernetes.io/cni=cilium
+  
+#  --set eni.subnet-ids='{subnet-0ddaa67fa7580e39a,subnet-0252c0d024de99979}'
 #  --set ipv4-native-routing-cidr="172.4.32.0/20"
 # --set cluster.poolIPv4PodCIDRList="{10.244.0.0/16}"
 # egress-masquerade-interfaces: "true"
 # --set eni.subnet-tags="k8s-cni=enabled"
+# --set eni.subnetTagsFilter=kubernetes.io/cni=cilium
 
 # wait until cilium pods ready, and rke2-coredns running
 
