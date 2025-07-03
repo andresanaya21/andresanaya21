@@ -1,0 +1,32 @@
+{
+    "github.copilot.advanced": {
+
+
+        "mcpServers": {
+            "flux-operator-mcp": {
+                "command":"/home/id03108/projects/researcher/andresanaya21/flux-mcp/flux-operator/bin/flux-operator-mcp",
+                "args":["serve"],
+                "env":{
+                    "KUBECONFIG":"/home/id03108/projects/researcher/andresanaya21/flux-mcp/flux-mcp-kubeconfig"
+                }
+            }
+        },
+        "chat.mcp.enabled": true
+    },
+    "mcp": {
+
+
+        "inputs": [],
+        "servers": {
+            "flux-operator-mcp": {
+                "command": "/home/id03108/projects/researcher/andresanaya21/flux-mcp/flux-operator/bin/flux-operator-mcp",
+                "args": ["serve"],
+                "env": {
+                    "KUBECONFIG":"/home/id03108/projects/researcher/andresanaya21/flux-mcp/flux-mcp.kubeconfig"
+                }
+            }
+        }
+    },
+    "chat.mcp.discovery.enabled": true,
+    "chat.mcp.serverSampling": {}
+}
