@@ -16,3 +16,10 @@ sudo apt-get install libnss3
 sudo apt-get install libasound2
 
 python book_appointment.py
+
+CONTACT = {
+    "name": "Monica Pérez Villarroel",
+    "id": "Z0428685Q",        # DNI/NIE/Pasaporte
+    "email": "monicaperezvillarroel060@gmail.com",
+    "phone": "613304514",
+}
