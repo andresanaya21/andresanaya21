@@ -1,0 +1,44 @@
+{
+  "title": "Reserva de cita",
+  "cookie": { "text": "Usamos cookies para mejorar tu experiencia.", "accept": "Aceptar" },
+
+  "sucursal": {
+    "panel_title": "SELECCIONAR SUCURSAL",
+    "subtitle": "Ministerio de Ciencia, Innovación y Universidades",
+    "options": ["Ministerio de Ciencia, Innovación y Universidades"]
+  },
+
+  "tramite": {
+    "panel_title": "SELECCIONAR TRAMITE",
+    "legend": "Elija Trámites",
+    "options": [
+      "Registro General",
+      "Acreditación certificados digitales de la FNMT",
+      "Reconocimiento de Firmas para Legalizaciones",
+      "Asistencia telefónica para la homologación y equivalencia de títulos universitarios extranjeros"
+    ]
+  },
+
+  "fecha_hora": {
+    "panel_title": "SELECCIONAR FECHA Y HORA",
+    "intro": "Por favor, seleccione una fecha y una hora",
+    "month_label": "septiembre 2025",
+    "weekdays": ["lu","ma","mi","ju","vi","sá","do"],
+    "enabled_days": ["11","12","18","25"],
+    "no_slots_msg": "No hay horas disponibles para el número seleccionado de personas y tramite",
+    "times": ["09:00","09:20","09:40","10:00","10:20","10:40","11:00","11:20"]
+  },
+
+  "contacto": {
+    "panel_title": "DETALLES DE CONTACTO",
+    "fields": [
+      { "name": "name",  "label": "Nombre",   "placeholder": "Nombre" },
+      { "name": "id",    "label": "DNI",      "placeholder": "DNI" },
+      { "name": "email", "label": "Correo",   "placeholder": "Correo" },
+      { "name": "phone", "label": "Teléfono", "placeholder": "Teléfono" }
+    ],
+    "confirm_text": "Confirmar",
+    "success_title": "Confirmación de cita",
+    "success_msg": "Cita confirmada para {DATE} a las {TIME} — {SERVICE} — Ministerio de Ciencia, Innovación y Universidades"
+  }
+}

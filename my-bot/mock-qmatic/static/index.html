@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <title>Reserva de cita — Mock</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <style>
+    :root { --bg:#f0f4f7; --panel:#1b2035; --panel-2:#32354a; --panel-3:#6e7282; --text:#fff; }
+    body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; background:#8fa1b5; }
+    .shell { max-width: 820px; margin:30px auto; background:#fff; border-radius:6px; padding:24px; }
+    h1 { margin: 0 0 16px; text-align:center; font-weight:600; color:#333; }
+    .accordion { display:flex; flex-direction:column; gap:12px; }
+
+    .panel { border-radius:2px; overflow:hidden; border:1px solid #d8dbe3; }
+    .panel > .hdr {
+      display:flex; align-items:center; justify-content:space-between;
+      color:#fff; background:#1b2035; padding:14px 16px; cursor:pointer;
+    }
+    .panel[data-variant="2"] > .hdr { background:#32354a; }
+    .panel[data-variant="3"] > .hdr { background:#32354a; }
+    .panel[data-variant="4"] > .hdr { background:#9aa0ad; }
+    .hdr .left { display:flex; align-items:center; gap:10px; }
+    .badge { width:28px; height:28px; border-radius:50%; background:#76631a; display:grid; place-items:center; font-weight:700; }
+    .subtitle { color:#b7c0d5; font-size:13px; }
+    .chev { transform: rotate(0deg); transition: transform .2s; }
+    .panel[aria-expanded="true"] .chev { transform: rotate(180deg); }
+
+    .body { background:#fff; padding:16px 16px 18px; display:none; }
+    .panel[aria-expanded="true"] .body { display:block; }
+
+    /* content blocks */
+    .radio-list { display:grid; gap:10px; }
+    .radio-item { display:flex; align-items:center; gap:10px; border:1px solid #e9e9ef; border-radius:4px; padding:12px; }
+    .calendar { margin-top:14px; }
+    .monthbar { background:#1b2035; color:#fff; padding:12px; border-radius:2px; }
+    .monthnav { display:flex; align-items:center; justify-content:space-between; margin:10px 0; }
+    .daysgrid { display:grid; grid-template-columns: repeat(7, 1fr); gap:8px; }
+    .day { border:1px solid #dcdfe8; border-radius:4px; padding:10px; text-align:center; cursor:pointer; background:#fff; }
+    .day[disabled] { opacity:.45; cursor:not-allowed; }
+    .weekrow { display:grid; grid-template-columns: repeat(7, 1fr); gap:8px; margin-bottom:6px; color:#666; text-transform:lowercase; }
+    .slots { margin-top:10px; display:grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap:10px; }
+    .slotbtn { padding:10px; border:1px solid #dcdfe8; border-radius:4px; background:#fff; cursor:pointer; }
+    .muted { color:#666; margin-top:12px; }
+    .row { display:flex; gap:10px; align-items:center; margin:10px 0; }
+    input { width:100%; padding:10px; border:1px solid #cfd3de; border-radius:4px; }
+    .confirm { margin-top:10px; display:flex; justify-content:flex-end; }
+    .btn { border:0; padding:10px 14px; border-radius:4px; cursor:pointer; }
+    .primary { background:#2f6fed; color:#fff; }
+    .ok { background:#eaf8ea; border:1px solid #bde5bd; padding:12px; border-radius:4px; margin-top:10px; }
+    .cookie { position:fixed; inset:auto 0 0 0; background:#111; color:#fff; padding:12px 16px; display:flex; gap:12px; align-items:center; }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <h1 id="pageTitle">Reserva de cita</h1>
+
+    <div id="accordion" class="accordion" aria-label="Reserva de cita"></div>
+
+    <div class="ok" id="successBox" style="display:none">
+      <strong id="successTitle">Confirmación de cita</strong>
+      <div id="successMsg" style="margin-top:6px"></div>
+    </div>
+  </div>
+
+  <div class="cookie" id="cookie">
+    <span id="cookieText"></span>
+    <button role="button" class="btn primary" id="acceptCookies">Aceptar</button>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
