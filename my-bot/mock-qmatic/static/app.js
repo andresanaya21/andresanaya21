@@ -188,26 +188,30 @@ function renderFechaHora(container) {
     const btnAttrs = {
       class:'day',
       role:'button',
-      ariaLabel:`Día ${d}`,
+      'data-date': dateISO,
+      'ariaLabel': `Día ${d}`,
       onClick: clickable ? () => {
         state.selected.date = dateISO;
         state.selected.time = null;
-        const hasSlots = renderTimeSlots(container); // returns boolean
-        // Enable/disable Step 4 based on availability for selected day
+        markSelectedDay(dateISO);        // highlight day
+        const hasSlots = renderTimeSlots(container); // also (re)builds slots
         setStep4Enabled(hasSlots);
-        if (hasSlots) openPanel(4); // only open if available
+        if (hasSlots) openPanel(4);
+        updatePickSummary(container);    // show summary
       } : undefined
     };
     if (!clickable) btnAttrs.disabled = true;
 
     const btn = el('button', btnAttrs, [dayStr]);
+    if (state.selected.date === dateISO) btn.classList.add('selected');
     grid.append(btn);
   }
   container.append(grid);
 
   // Slots / "no slots" message for previously-selected date
   const has = renderTimeSlots(container);
-  setStep4Enabled(Boolean(has && state.selected.date)); // ensure consistency on re-render
+  setStep4Enabled(Boolean(has && state.selected.date));
+  updatePickSummary(container);          // keep summary consistent
 }
 
 function currentMonth() {
@@ -225,6 +229,11 @@ function changeMonth(delta) {
 
 function renderTimeSlots(container) {
   container.querySelectorAll('.slots, .muted').forEach(n => n.remove());
+
+  // Remove previous summary (we re-add below)
+  const oldSummary = container.querySelector('.pick-summary');
+  if (oldSummary) oldSummary.remove();
+
   if (!state.selected.date) return false;
 
   const flags = state.schema.flags || {};
@@ -239,15 +248,49 @@ function renderTimeSlots(container) {
 
   const wrap = el('div', {class:'slots'}, []);
   times.forEach(t => {
-    const b = el('button', {class:'slotbtn', role:'button', onClick:() => {
-      state.selected.time = t;
-      // Step 4 is already enabled; keep it open
-      openPanel(4);
-    }}, [t]);
+    const b = el('button', {
+      class:'slotbtn' + (state.selected.time === t ? ' selected' : ''),
+      role:'button',
+      'data-time': t,
+      onClick: () => {
+        state.selected.time = t;
+        markSelectedTime(t);               // highlight time
+        openPanel(4);
+        updatePickSummary(container);      // show summary
+      }
+    }, [t]);
     wrap.append(b);
   });
   container.append(wrap);
   return true;
+}
+
+/* ---------- Helpers to mark selected items ---------- */
+function markSelectedDay(dateISO) {
+  document.querySelectorAll('.day').forEach(b => b.classList.remove('selected'));
+  const btn = document.querySelector(`.day[data-date="${dateISO}"]`);
+  if (btn) btn.classList.add('selected');
+}
+function markSelectedTime(timeStr) {
+  document.querySelectorAll('.slotbtn').forEach(b => b.classList.remove('selected'));
+  const btn = document.querySelector(`.slotbtn[data-time="${timeStr}"]`);
+  if (btn) btn.classList.add('selected');
+}
+
+/* ---------- Tiny summary under the calendar ---------- */
+function updatePickSummary(container) {
+  const old = container.querySelector('.pick-summary');
+  if (old) old.remove();
+
+  const hasDate = !!state.selected.date;
+  const hasTime = !!state.selected.time;
+
+  if (!hasDate && !hasTime) return;
+
+  const wrap = el('div', {class:'pick-summary'});
+  if (hasDate) wrap.append(el('span', {class:'pill'}, [`Fecha: ${state.selected.date}`]));
+  if (hasTime) wrap.append(el('span', {class:'pill'}, [`Hora: ${state.selected.time}`]));
+  container.append(wrap);
 }
 
 /* ---------- Panel 4: CONTACTO ---------- */
