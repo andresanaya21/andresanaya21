@@ -1,24 +1,21 @@
-# Playwright base image (Chromium/Firefox/WebKit + Python)
-FROM mcr.microsoft.com/playwright/python:v1.55.0-jammy
-
-ARG DEBIAN_FRONTEND=noninteractive
-ENV TZ=Europe/Madrid
-
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends tzdata ca-certificates curl && \
-    ln -fs /usr/share/zoneinfo/$TZ /etc/localtime && \
-    dpkg-reconfigure -f noninteractive tzdata && \
-    rm -rf /var/lib/apt/lists/*
+FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install Python deps (Playwright already included in base image)
-RUN pip install --no-cache-dir pytz
+# System deps for browsers
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libnss3 libnspr4 libasound2 libx11-xcb1 libxcomposite1 libxcursor1 \
+    libxdamage1 libxi6 libxtst6 libglib2.0-0 libxrandr2 libatk1.0-0 \
+    libatk-bridge2.0-0 libdrm2 libgbm1 libxkbcommon0 libpango-1.0-0 \
+    libcairo2 libatspi2.0-0 wget curl tzdata ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
 
-# Copy bot + tick runner
+# Python deps
+RUN pip install --no-cache-dir playwright pytz
+
+# Install browser binaries
+RUN playwright install --with-deps
+
 COPY book_appointment_real.py tick_runner.py /app/
 
-RUN mkdir -p /app/artifacts /app/videos
-
-# Default command runs the tick runner
 CMD ["python", "tick_runner.py"]

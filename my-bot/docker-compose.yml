@@ -1,40 +1,34 @@
-version: "3.9"
-
 services:
-  # One-shot runner (manual runs)
+  # One-shot manual run: executes the bot once and exits
   bot:
     build:
       context: ./bot
       dockerfile: Dockerfile
-    container_name: qmatic-bot
+    container_name: qmatic-bot-once
     environment:
-      # Target the real site by default; override as needed
       BASE_URL: "https://citaprevia.ciencia.gob.es/qmaticwebbooking/#/"
       TARGET_TRAMITE: "Asistencia telefónica para la homologación y equivalencia de títulos universitarios extranjeros"
       CONTACT_NAME: "Monica Pérez Villarroel"
       CONTACT_ID: "Z0428685Q"
       CONTACT_EMAIL: "monicaperezvillarroel060@gmail.com"
       CONTACT_PHONE: "613304514"
-      MAX_MONTHS_TO_SCAN: "6"
-      # Debug defaults (headed & slow-mo OFF in containers)
       HEADLESS: "true"
       SLOW_MO_MS: "0"
+      MAX_MONTHS_TO_SCAN: "6"
       DEFAULT_TIMEOUT_MS: "25000"
-      # All artifacts/videos land in /app/artifacts and /app/videos
       TZ: "Europe/Madrid"
-    # Default command runs the bot once
-    command: ["python", "book_appointment_real.py"]
     volumes:
-      # optional: persist artifacts/videos on host
       - ./bot/artifacts:/app/artifacts
       - ./bot/videos:/app/videos
+    # Override image CMD to run the bot once
+    command: ["python", "book_appointment_real.py"]
 
-  # Scheduled runner (daemon)
-  scheduler:
+  # Always-on tick runner: triggers the bot every 5s in the allowed window
+  ticker:
     build:
       context: ./bot
       dockerfile: Dockerfile
-    container_name: qmatic-bot-scheduler
+    container_name: qmatic-bot-ticker
     environment:
       BASE_URL: "https://citaprevia.ciencia.gob.es/qmaticwebbooking/#/"
       TARGET_TRAMITE: "Asistencia telefónica para la homologación y equivalencia de títulos universitarios extranjeros"
@@ -42,15 +36,14 @@ services:
       CONTACT_ID: "Z0428685Q"
       CONTACT_EMAIL: "monicaperezvillarroel060@gmail.com"
       CONTACT_PHONE: "613304514"
-      MAX_MONTHS_TO_SCAN: "6"
       HEADLESS: "true"
       SLOW_MO_MS: "0"
+      MAX_MONTHS_TO_SCAN: "6"
       DEFAULT_TIMEOUT_MS: "25000"
       TZ: "Europe/Madrid"
+      # Optional: change tick interval (seconds)
+      TICK_INTERVAL: "5"
     volumes:
-      - ./bot/crontab:/etc/crontab:ro
       - ./bot/artifacts:/app/artifacts
       - ./bot/videos:/app/videos
-    # Run supercronic to obey /etc/crontab
-    command: ["supercronic", "/etc/crontab"]
     restart: unless-stopped
