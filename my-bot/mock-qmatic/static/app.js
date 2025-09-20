@@ -18,7 +18,8 @@ const state = {
   schema: null,
   selected: { sucursal:null, tramite:null, date:null, time:null },
   user: { name:"", id:"", email:"", phone:"" },
-  monthIndex: 0
+  monthIndex: 0,
+  mode: 'book' // 'book' | 'notify'
 };
 
 async function bootstrap() {
@@ -31,7 +32,7 @@ async function bootstrap() {
   qs('#acceptCookies').addEventListener('click', () => qs('#cookie').remove());
 
   renderAccordion();
-  // Step 4 starts disabled until a day with availability is picked
+  // Step 4 starts disabled until: (a) user chooses a date with slots OR (b) user chooses "Avisarme"
   setStep4Enabled(false);
 }
 
@@ -158,6 +159,9 @@ function renderTramite(container) {
 function renderFechaHora(container) {
   container.innerHTML = "";
 
+  // Reset to booking mode whenever we open the calendar
+  state.mode = 'book';
+
   // Intro
   container.append(el('div', {class:'monthbar'}, [state.schema.fecha_hora.intro]));
 
@@ -194,8 +198,8 @@ function renderFechaHora(container) {
         state.selected.date = dateISO;
         state.selected.time = null;
         markSelectedDay(dateISO);        // highlight day
-        const hasSlots = renderTimeSlots(container); // also (re)builds slots
-        setStep4Enabled(hasSlots);
+        const hasSlots = renderTimeSlots(container); // also (re)builds slots & no-slot box
+        setStep4Enabled(hasSlots);       // enable step 4 only if slots OR if user picks "Avisarme"
         if (hasSlots) openPanel(4);
         updatePickSummary(container);    // show summary
       } : undefined
@@ -227,12 +231,9 @@ function changeMonth(delta) {
   state.selected.time = null;
 }
 
+/* ---------- Build slots or the "no availability" box ---------- */
 function renderTimeSlots(container) {
-  container.querySelectorAll('.slots, .muted').forEach(n => n.remove());
-
-  // Remove previous summary (we re-add below)
-  const oldSummary = container.querySelector('.pick-summary');
-  if (oldSummary) oldSummary.remove();
+  container.querySelectorAll('.slots, .muted, .emptybox, .pick-summary').forEach(n => n.remove());
 
   if (!state.selected.date) return false;
 
@@ -242,7 +243,16 @@ function renderTimeSlots(container) {
   const times = flags.no_slots ? [] : (timesMap[state.selected.date] || []);
 
   if (times.length === 0) {
-    container.append(el('div', {class:'muted'}, [state.schema.fecha_hora.no_slots_msg]));
+    // No slots for this date → show empty state with actions
+    const box = el('div', {class:'emptybox'}, [
+      el('div', {class:'empty-title'}, [state.schema.fecha_hora.no_slots_title || 'Sin disponibilidad']),
+      el('div', {class:'empty-msg'}, [state.schema.fecha_hora.no_slots_msg]),
+      el('div', {class:'actions'}, [
+        el('button', {class:'btn', onClick: onFindFirstAvailable}, [state.schema.fecha_hora.find_first_btn || 'Buscar primera fecha disponible']),
+        el('button', {class:'btn primary', onClick: onNotifyMe}, [state.schema.fecha_hora.notify_btn || 'Avisarme cuando haya citas'])
+      ])
+    ]);
+    container.append(box);
     return false;
   }
 
@@ -253,9 +263,11 @@ function renderTimeSlots(container) {
       role:'button',
       'data-time': t,
       onClick: () => {
+        state.mode = 'book';
         state.selected.time = t;
         markSelectedTime(t);               // highlight time
         openPanel(4);
+        setStep4Enabled(true);
         updatePickSummary(container);      // show summary
       }
     }, [t]);
@@ -263,6 +275,45 @@ function renderTimeSlots(container) {
   });
   container.append(wrap);
   return true;
+}
+
+/* ---------- Actions for the no-availability box ---------- */
+function onFindFirstAvailable() {
+  // Scan months/dates for first available slot from the current view forward
+  const months = state.schema.fecha_hora.months || [];
+  let startIdx = state.monthIndex;
+
+  for (let m = startIdx; m < months.length; m++) {
+    const mobj = months[m];
+    const dates = Object.keys(mobj.times_by_date || {}).sort(); // ISO dates sorted (earliest first)
+    for (const dateISO of dates) {
+      const slots = (mobj.times_by_date || {})[dateISO] || [];
+      if (slots.length > 0) {
+        state.monthIndex = m;
+        state.selected.date = dateISO;
+        state.selected.time = slots[0];
+        state.mode = 'book';
+        // Re-render step 3 to reflect new month/day and slots
+        const p3Body = document.querySelector('.panel[data-step="3"] .body');
+        if (p3Body) renderFechaHora(p3Body);
+        // Ensure highlights and open step 4
+        markSelectedDay(dateISO);
+        markSelectedTime(state.selected.time);
+        setStep4Enabled(true);
+        openPanel(4);
+        return;
+      }
+    }
+  }
+  // Nothing found at all → keep box; you may alert if desired
+  alert(state.schema.fecha_hora.no_any_availability || 'No se han encontrado citas en los meses cargados.');
+}
+
+function onNotifyMe() {
+  // Switch to waitlist mode, enable Step 4 even without time/date
+  state.mode = 'notify';
+  setStep4Enabled(true);
+  openPanel(4);
 }
 
 /* ---------- Helpers to mark selected items ---------- */
@@ -285,11 +336,16 @@ function updatePickSummary(container) {
   const hasDate = !!state.selected.date;
   const hasTime = !!state.selected.time;
 
-  if (!hasDate && !hasTime) return;
+  if (!hasDate && !hasTime && state.mode !== 'notify') return;
 
   const wrap = el('div', {class:'pick-summary'});
-  if (hasDate) wrap.append(el('span', {class:'pill'}, [`Fecha: ${state.selected.date}`]));
-  if (hasTime) wrap.append(el('span', {class:'pill'}, [`Hora: ${state.selected.time}`]));
+  if (state.mode === 'notify') {
+    wrap.append(el('span', {class:'pill'}, ['Modo: Avisarme']));
+    if (hasDate) wrap.append(el('span', {class:'pill'}, [`Fecha elegida: ${state.selected.date}`]));
+  } else {
+    if (hasDate) wrap.append(el('span', {class:'pill'}, [`Fecha: ${state.selected.date}`]));
+    if (hasTime) wrap.append(el('span', {class:'pill'}, [`Hora: ${state.selected.time}`]));
+  }
   container.append(wrap);
 }
 
@@ -307,12 +363,17 @@ function renderContacto(container) {
   });
 
   const confirm = el('div', {class:'confirm'});
+  const confirmLabel =
+    state.mode === 'notify'
+      ? (state.schema.contacto.notify_confirm_text || 'Guardar aviso')
+      : (state.schema.contacto.confirm_text || 'Confirmar');
+
   confirm.append(el('button', {
     class:'btn primary',
     role:'button',
-    ariaLabel: state.schema.contacto.confirm_text || 'Confirmar',
+    ariaLabel: confirmLabel,
     onClick: onConfirm
-  }, [state.schema.contacto.confirm_text || 'Confirmar']));
+  }, [confirmLabel]));
   container.append(confirm);
 }
 
@@ -320,10 +381,21 @@ function onConfirm() {
   for (const f of state.schema.contacto.fields) {
     if (!state.user[f.name]) { alert('Falta ' + f.label); return; }
   }
-  // Optional: enforce a time selection if your flow requires it
-  // if (!state.selected.time) { alert('Seleccione una hora.'); return; }
 
   const s = state.schema;
+  if (state.mode === 'notify') {
+    // Waitlist flow: no time is required
+    qs('#successTitle').textContent = s.contacto.notify_success_title || 'Aviso registrado';
+    const msg = (s.contacto.notify_success_msg || 'Te avisaremos cuando haya citas disponibles — {SERVICE}.')
+      .replace('{SERVICE}', state.selected.tramite || '');
+    qs('#successMsg').textContent = msg;
+    qs('#successBox').style.display = 'block';
+    return;
+  }
+
+  // Booking flow — optionally enforce time selection
+  if (!state.selected.time) { alert('Seleccione una hora.'); return; }
+
   qs('#successTitle').textContent = s.contacto.success_title;
   const msg = (s.contacto.success_msg || '')
     .replace('{DATE}', state.selected.date || '')

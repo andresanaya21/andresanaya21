@@ -22,7 +22,13 @@
   "fecha_hora": {
     "panel_title": "SELECCIONAR FECHA Y HORA",
     "intro": "Por favor, seleccione una fecha y una hora",
+
+    "no_slots_title": "Sin disponibilidad",
     "no_slots_msg": "No hay horas disponibles para el número seleccionado de personas y trámite",
+    "find_first_btn": "Buscar primera fecha disponible",
+    "notify_btn": "Avisarme cuando haya citas",
+    "no_any_availability": "No se han encontrado citas en los meses cargados.",
+
     "months": [
       {
         "year": 2025,
@@ -58,6 +64,10 @@
     ],
     "confirm_text": "Confirmar",
     "success_title": "Confirmación de cita",
-    "success_msg": "Cita confirmada para {DATE} a las {TIME} — {SERVICE} — Ministerio de Ciencia, Innovación y Universidades"
+    "success_msg": "Cita confirmada para {DATE} a las {TIME} — {SERVICE} — Ministerio de Ciencia, Innovación y Universidades",
+
+    "notify_confirm_text": "Guardar aviso",
+    "notify_success_title": "Aviso registrado",
+    "notify_success_msg": "Te avisaremos cuando haya citas disponibles — {SERVICE}"
   }
 }

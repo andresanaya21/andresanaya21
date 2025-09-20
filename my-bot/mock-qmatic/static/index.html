@@ -51,11 +51,17 @@
     }
     .day:focus, .slotbtn:focus { outline:2px solid rgba(47,111,237,.35); }
 
-    /* Little summary line under step 3 */
+    /* Little summary line under the calendar */
     .pick-summary { margin-top:10px; font-size:14px; color:#333; }
     .pick-summary .pill {
       display:inline-block; padding:4px 8px; border:1px solid #dcdfe8; border-radius:999px; margin-right:6px; background:#f7f9ff;
     }
+
+    /* Empty-state box when no availability */
+    .emptybox { margin-top:12px; padding:14px; border:1px dashed #cfd3de; border-radius:6px; background:#f9fbff; }
+    .empty-title { font-weight:600; margin-bottom:4px; color:#333; }
+    .empty-msg { color:#555; margin-bottom:10px; }
+    .actions { display:flex; gap:8px; flex-wrap:wrap; }
   </style>
 </head>
 <body>
