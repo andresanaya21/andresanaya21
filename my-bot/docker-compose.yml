@@ -41,8 +41,13 @@ services:
       MAX_MONTHS_TO_SCAN: "6"
       DEFAULT_TIMEOUT_MS: "25000"
       TZ: "Europe/Madrid"
-      # Optional: change tick interval (seconds)
       TICK_INTERVAL: "5"
+      BOT_TIMEOUT: "240"
+      WINDOW_DAYS: "SUN,MON,TUE,WED"
+      WINDOW_START: "12:10"
+      WINDOW_END: "14:00"
+      # optional: pass extra env to the bot process
+      BOT_EXTRA_ENV: "HEADLESS=true,SLOW_MO_MS=0,DEFAULT_TIMEOUT_MS=30000"
     volumes:
       - ./bot/artifacts:/app/artifacts
       - ./bot/videos:/app/videos
