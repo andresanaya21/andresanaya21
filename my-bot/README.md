@@ -2,9 +2,12 @@
 
 # Mock Qmatic + Booking Bot
 
-Automate appointment booking for the Ministry site and test locally with a lightweight mock that mirrors the flow.
+Automate appointment booking for the Ministry site, with a local mock for testing and a resilient Playwright bot.
+Includes an always-on **tick runner** service that triggers the bot every 5 seconds, but only **Sunday → Wednesday, 12:10 → 14:00 (Europe/Madrid)**.
 
-## Folder layout
+---
+
+## 📂 Project structure
 
 ```
 .
@@ -16,17 +19,17 @@ Automate appointment booking for the Ministry site and test locally with a light
 │       ├── index.html
 │       └── app.js
 └── bot/
-    ├── book_appointment.py            # targets local mock
-    ├── book_appointment_real.py       # resilient selectors for the real site
-    ├── Dockerfile                     # Playwright image + supercronic
-    ├── crontab                        # schedule for the scheduler service
-    ├── artifacts/                     # screenshots & traces (mounted)
-    └── videos/                        # Playwright videos (mounted)
+    ├── book_appointment.py          # Bot for the local mock
+    ├── book_appointment_real.py     # Resilient bot for the real site
+    ├── tick_runner.py               # Scheduler loop (5s ticks, Sun–Wed 12:10–14:00)
+    ├── Dockerfile                   # Playwright base + pytz
+    ├── artifacts/                   # Screenshots & traces
+    └── videos/                      # Playwright videos
 ```
 
 ---
 
-## 1) Run the **mock** appointment web (Flask)
+## 1️⃣ Run the **mock** appointment site (Flask)
 
 ```bash
 cd mock-qmatic/
@@ -38,11 +41,11 @@ python server.py
 # -> http://localhost:5173
 ```
 
-> Tip: you can simulate no availability with `?no_slots=1` (the mock UI reads it).
+Use `?no_slots=1` to simulate “no availability”.
 
 ---
 
-## 2) Run the **bot** against the mock (Playwright, local venv)
+## 2️⃣ Run the bot locally (without Docker)
 
 ```bash
 cd bot/
@@ -52,40 +55,30 @@ source .venv/bin/activate
 pip install --upgrade pip
 pip install playwright
 python -m playwright install
+playwright install-deps  # Linux only, installs required system libs
 ```
 
-Linux-only (if browsers fail to launch):
-
-```bash
-# All OS deps in one go (recommended)
-playwright install-deps
-# or minimal packages:
-sudo apt-get install -y libnspr4 libnss3 libasound2
-```
-
-Run the local mock bot:
+### Run against the local mock
 
 ```bash
 python book_appointment.py
 ```
 
----
+### Run against the real site
 
-## 3) Run the **bot** against the real site
-
-Debug/slow:
+Debug (headed, inspector):
 
 ```bash
 PWDEBUG=1 HEADLESS=false python book_appointment_real.py
 ```
 
-Step through specific points:
+Slow motion:
 
 ```bash
-BREAK_AT=after_step1,after_step2 HEADLESS=false SLOW_MO_MS=200 python book_appointment_real.py
+HEADLESS=false SLOW_MO_MS=300 python book_appointment_real.py
 ```
 
-Headless/fast:
+Headless, fast:
 
 ```bash
 HEADLESS=true SLOW_MO_MS=0 python book_appointment_real.py
@@ -97,185 +90,71 @@ Replay a trace:
 playwright show-trace artifacts/trace.zip
 ```
 
-### Contact details (env or edit in script)
-
-```python
-CONTACT = {
-    "name": "Monica Pérez Villarroel",
-    "id": "Z0428685Q",        # DNI/NIE/Pasaporte
-    "email": "monicaperezvillarroel060@gmail.com",
-    "phone": "613304514",
-}
-```
-
-You can also export them as env vars:
-
-```bash
-export CONTACT_NAME="Monica Pérez Villarroel"
-export CONTACT_ID="Z0428685Q"
-export CONTACT_EMAIL="monicaperezvillarroel060@gmail.com"
-export CONTACT_PHONE="613304514"
-```
-
 ---
 
-## 4) Docker & scheduler (every Sun–Wed, 12:10–14:00 Europe/Madrid)
-
-### Build (no cache recommended after Dockerfile changes)
+## 3️⃣ Docker: build image
 
 ```bash
-# Compose v2 (modern): 
 docker compose build --no-cache
-# Compose v1 (older): 
-# docker-compose build --no-cache
 ```
 
-### One-shot manual run
+This builds a single Playwright-based image used by both the one-shot bot and the tick runner.
+
+---
+
+## 4️⃣ Docker: run once (manual)
 
 ```bash
 docker compose run --rm bot
-# docker-compose run --rm bot
 ```
 
-### Start scheduler daemon
-
-```bash
-docker compose up -d scheduler
-docker compose logs -f scheduler
-# docker-compose up -d scheduler
-# docker-compose logs -f scheduler
-```
-
-The schedule is defined in `bot/crontab`:
-
-```
-# Every 10 min from 12:10..12:59 (Sun..Wed)
-10-59/10 12 * * SUN,MON,TUE,WED  python /app/book_appointment_real.py >> /proc/1/fd/1 2>&1
-# Every 10 min from 13:00..13:59 (Sun..Wed)
-*/10      13 * * SUN,MON,TUE,WED  python /app/book_appointment_real.py >> /proc/1/fd/1 2>&1
-# Once at 14:00 (Sun..Wed)
-0         14 * * SUN,MON,TUE,WED  python /app/book_appointment_real.py >> /proc/1/fd/1 2>&1
-```
-
-Artifacts and videos are bind-mounted to `./bot/artifacts` and `./bot/videos`.
-
-> **Note:** Remove the `version:` key from `docker-compose.yml` if you see a warning. Compose v2 ignores it.
+Runs `book_appointment_real.py` once with the env vars configured in `docker-compose.yml`.
 
 ---
 
-## 5) Environment variables (bot)
+## 5️⃣ Docker: run continuously (tick runner)
 
-You can override these when running locally or via Compose:
-
-| Variable             | Default                                                                                           | What it does                                                                   |
-| -------------------- | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| `BASE_URL`           | `https://citaprevia.ciencia.gob.es/qmaticwebbooking/#/`                                           | Target site (use `http://localhost:5173` for the mock)                         |
-| `TARGET_TRAMITE`     | `Asistencia telefónica para la homologación y equivalencia de títulos universitarios extranjeros` | Exact/partial match used by resilient selectors                                |
-| `HEADLESS`           | `true` (Docker), `false` (debug)                                                                  | Browser UI visible or not                                                      |
-| `SLOW_MO_MS`         | `0` (Docker), `150` (debug)                                                                       | Adds delay between operations                                                  |
-| `DEFAULT_TIMEOUT_MS` | `25000`                                                                                           | Per-action timeout                                                             |
-| `MAX_MONTHS_TO_SCAN` | `6`                                                                                               | How far ahead to search                                                        |
-| `CONTACT_*`          | —                                                                                                 | Contact fields (see above)                                                     |
-| `TZ`                 | `Europe/Madrid`                                                                                   | Scheduler timezone inside container                                            |
-| `BREAK_AT`           | *empty*                                                                                           | Comma list of breakpoints: `after_step1,after_step2,after_step3,after_confirm` |
-
-Example:
+Start the always-on scheduler (triggers every 5s, Sun–Wed, 12:10–14:00):
 
 ```bash
-BASE_URL=http://localhost:5173 HEADLESS=false SLOW_MO_MS=250 python bot/book_appointment_real.py
+docker compose up -d ticker
+docker compose logs -f ticker
 ```
+
+You’ll see logs like:
+
+```
+[tick-runner] 2025-09-21T12:09:55+02:00 → outside window
+[tick-runner] 2025-09-21T12:10:00+02:00 → starting bot: python /app/book_appointment_real.py
+...
+```
+
+Artifacts and videos are persisted to `./bot/artifacts` and `./bot/videos`.
 
 ---
 
-## 6) Troubleshooting
+## ⚙️ Configuration
 
-### Playwright browsers fail to launch (Linux)
+Both services share env vars defined in `docker-compose.yml`. You can also override them at runtime with `-e`.
 
-```
-Error: Host system is missing dependencies ...
-```
-
-Fix:
-
-```bash
-playwright install-deps
-# or:
-sudo apt-get install -y libnspr4 libnss3 libasound2
-```
-
-### Version mismatch in Docker
-
-```
-Looks like Playwright was just updated to 1.xx. Please update docker image as well.
-```
-
-Use a matching image tag in `bot/Dockerfile`:
-
-```dockerfile
-FROM mcr.microsoft.com/playwright/python:v1.55.0-jammy
-```
-
-…and **do not** `pip install playwright` again (the base image already includes the matching Python bindings & browsers).
-
-### tzdata prompt during build hangs
-
-Use non-interactive setup in `bot/Dockerfile`:
-
-```dockerfile
-ARG DEBIAN_FRONTEND=noninteractive
-ENV TZ=Europe/Madrid
-RUN apt-get update && apt-get install -y --no-install-recommends tzdata \
- && ln -fs /usr/share/zoneinfo/$TZ /etc/localtime \
- && dpkg-reconfigure -f noninteractive tzdata
-```
-
-### Can’t see what’s happening (too fast)
-
-Use:
-
-```bash
-HEADLESS=false SLOW_MO_MS=300 python bot/book_appointment_real.py
-# or the inspector:
-PWDEBUG=1 python bot/book_appointment_real.py
-```
-
-Open traces:
-
-```bash
-playwright show-trace bot/artifacts/trace.zip
-```
-
-### Real site changed selectors
-
-The resilient selectors already try radio lists, Material combobox/overlay, and iframes. If something still fails, run:
-
-```bash
-PWDEBUG=1 HEADLESS=false python bot/book_appointment_real.py
-```
-
-then share `bot/artifacts/trace.zip` (it records DOM snapshots) and we’ll tune a selector quickly.
-
----
-
-## 7) Quick commands (cheat sheet)
-
-```bash
-# Mock server:
-(cd mock-qmatic && python -m venv .venv && source .venv/bin/activate && pip install flask && python server.py)
-
-# Bot (local mock):
-(cd bot && python -m venv .venv && source .venv/bin/activate && pip install playwright && python -m playwright install && python book_appointment.py)
-
-# Bot (real site, debug):
-(cd bot && source .venv/bin/activate && PWDEBUG=1 HEADLESS=false python book_appointment_real.py)
-
-# Docker (manual bot):
-docker compose build --no-cache bot
-docker compose run --rm bot
-
-# Docker (scheduler):
-docker compose up -d scheduler
-docker compose logs -f scheduler
-```
+| Variable             | Default                                                 | Purpose                                                 |
+| -------------------- | ------------------------------------------------------- | ------------------------------------------------------- |
+| `BASE_URL`           | `https://citaprevia.ciencia.gob.es/qmaticwebbooking/#/` | Target site (use `http://localhost:5173` for mock)      |
+| `TARGET_TRAMITE`     | Long text for target service                            | Which trámite to select                                 |
+| `CONTACT_NAME`       | `Monica Pérez Villarroel`                               | Contact info                                            |
+| `CONTACT_ID`         | `Z0428685Q`                                             | DNI/NIE/passport                                        |
+| `CONTACT_EMAIL`      | …                                                       | Email                                                   |
+| `CONTACT_PHONE`      | …                                                       | Phone                                                   |
+| `HEADLESS`           | `true` in Docker                                        | Browser visible or not                                  |
+| `SLOW_MO_MS`         | `0` in Docker                                           | Delay between actions                                   |
+| `MAX_MONTHS_TO_SCAN` | `6`                                                     | How far ahead to search                                 |
+| `DEFAULT_TIMEOUT_MS` | `25000`                                                 | Per-action timeout                                      |
+| `TZ`                 | `Europe/Madrid`                                         | Timezone                                                |
+| `TICK_INTERVAL`      | `5`                                                     | Tick interval (seconds) for the runner                  |
+| `BOT_TIMEOUT`        | `180`                                                   | Max seconds per bot run before force kill               |
+| `WINDOW_DAYS`        | `SUN,MON,TUE,WED`                                       | Which days                                              |
+| `WINDOW_START`       | `12:10`                                                 | Start time                                              |
+| `WINDOW_END`         | `14:00`                                                 | End time (inclusive)                                    |
+| `BOT_EXTRA_ENV`      | empty                                                   | Extra env for bot, e.g. `HEADLESS=false,SLOW_MO_MS=250` |
 
 ---
