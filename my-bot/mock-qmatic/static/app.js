@@ -1,11 +1,11 @@
 const qs = s => document.querySelector(s);
 
-// FIXED helper: skips attributes when value is undefined/null
+// Helper to create elements with attributes + children
 const el = (tag, attrs = {}, children = []) => {
   const n = document.createElement(tag);
   for (const [k, v] of Object.entries(attrs)) {
     if (k === "class") n.className = v;
-    else if (k.startsWith("on")) n.addEventListener(k.slice(2), v);
+    else if (k.startsWith("on")) n.addEventListener(k.slice(2).toLowerCase(), v);
     else if (k === "role") n.setAttribute("role", v);
     else if (k === "ariaLabel") n.setAttribute("aria-label", v);
     else if (v !== undefined && v !== null) n.setAttribute(k, v);
@@ -31,39 +31,47 @@ async function bootstrap() {
   qs('#acceptCookies').addEventListener('click', () => qs('#cookie').remove());
 
   renderAccordion();
+  // Step 4 starts disabled until a day with availability is picked
+  setStep4Enabled(false);
 }
 
+/* ---------- Accordion scaffolding ---------- */
 function renderAccordion() {
   const root = qs('#accordion'); root.innerHTML = "";
 
   root.append(makePanel({
-    number: 1, variant: 1,
+    number: 1, variant: 1, step: 1,
     title: state.schema.sucursal.panel_title,
     subtitle: state.schema.sucursal.subtitle,
     content: renderSucursal, expanded: true
   }));
 
   root.append(makePanel({
-    number: 2, variant: 2,
+    number: 2, variant: 2, step: 2,
     title: state.schema.tramite.panel_title,
     content: renderTramite
   }));
 
   root.append(makePanel({
-    number: 3, variant: 3,
+    number: 3, variant: 3, step: 3,
     title: state.schema.fecha_hora.panel_title,
     content: renderFechaHora
   }));
 
   root.append(makePanel({
-    number: 4, variant: 4,
+    number: 4, variant: 4, step: 4,
     title: state.schema.contacto.panel_title,
     content: renderContacto
   }));
 }
 
-function makePanel({number, variant, title, subtitle, content, expanded=false}) {
-  const panel = el('section', {class:'panel', 'data-variant': String(variant), 'aria-expanded': String(expanded)}, []);
+function makePanel({number, variant, step, title, subtitle, content, expanded=false}) {
+  const panel = el('section', {
+    class:'panel',
+    'data-variant': String(variant),
+    'data-step': String(step),
+    'aria-expanded': String(expanded)
+  }, []);
   const hdrBtn = el('button', {class:'hdr', role:'button', 'aria-expanded': String(expanded)});
   const left = el('div', {class:'left'});
   left.append(el('div', {class:'badge'}, [String(number)]));
@@ -73,6 +81,7 @@ function makePanel({number, variant, title, subtitle, content, expanded=false}) 
   ]));
   hdrBtn.append(left, el('div', {class:'chev'}, ['▾']));
   hdrBtn.addEventListener('click', () => {
+    if (panel.getAttribute('data-disabled') === 'true') return; // block if disabled
     const cur = panel.getAttribute('aria-expanded') === 'true';
     panel.setAttribute('aria-expanded', String(!cur));
     hdrBtn.setAttribute('aria-expanded', String(!cur));
@@ -83,7 +92,40 @@ function makePanel({number, variant, title, subtitle, content, expanded=false}) 
   return panel;
 }
 
-/* ---------- SUCURSAL ---------- */
+/* ---------- Enable/disable step 4 ---------- */
+function setStep4Enabled(enabled) {
+  const p4 = document.querySelector('.panel[data-step="4"]');
+  if (!p4) return;
+  const hdr = p4.querySelector('.hdr');
+  if (enabled) {
+    p4.removeAttribute('data-disabled');
+    hdr.removeAttribute('aria-disabled');
+  } else {
+    p4.setAttribute('data-disabled', 'true');
+    p4.setAttribute('aria-expanded', 'false');
+    hdr.setAttribute('aria-disabled', 'true');
+    hdr.setAttribute('aria-expanded', 'false');
+  }
+}
+
+function openPanel(n) {
+  const panels = document.querySelectorAll('.panel');
+  panels.forEach((p, i) => {
+    const expanded = (i <= (n-1));
+    if (p.getAttribute('data-disabled') === 'true' && expanded && p.getAttribute('data-step') === '4') {
+      // don't force-open disabled step 4
+      p.setAttribute('aria-expanded', 'false');
+      const hdr = p.querySelector('.hdr'); hdr?.setAttribute('aria-expanded', 'false');
+      return;
+    }
+    p.setAttribute('aria-expanded', String(expanded));
+    const hdr = p.querySelector('.hdr');
+    if (hdr) hdr.setAttribute('aria-expanded', String(expanded));
+  });
+  qs('#successBox').style.display = 'none';
+}
+
+/* ---------- Panel 1: SUCURSAL ---------- */
 function renderSucursal(container) {
   const list = el('div', {class:'radio-list', role:'group', ariaLabel: state.schema.sucursal.panel_title}, []);
   (state.schema.sucursal.options||[]).forEach((name, idx) => {
@@ -97,7 +139,7 @@ function renderSucursal(container) {
   container.append(list);
 }
 
-/* ---------- TRÁMITE ---------- */
+/* ---------- Panel 2: TRÁMITE ---------- */
 function renderTramite(container) {
   if (state.schema.tramite.legend) container.append(el('div', {style:'margin-bottom:8px; color:#555'}, [state.schema.tramite.legend]));
   const list = el('div', {class:'radio-list', role:'group', ariaLabel: state.schema.tramite.panel_title}, []);
@@ -112,7 +154,7 @@ function renderTramite(container) {
   container.append(list);
 }
 
-/* ---------- FECHA Y HORA (month nav + per-date slots) ---------- */
+/* ---------- Panel 3: FECHA Y HORA ---------- */
 function renderFechaHora(container) {
   container.innerHTML = "";
 
@@ -121,8 +163,8 @@ function renderFechaHora(container) {
 
   // Nav
   const nav = el('div', {class:'monthnav'});
-  const prev = el('button', {role:'button', 'ariaLabel':'Anterior', class:'btn', onClick:() => { changeMonth(-1); renderFechaHora(container); }}, ['‹']);
-  const next = el('button', {role:'button', 'ariaLabel':'Siguiente', class:'btn', onClick:() => { changeMonth(+1); renderFechaHora(container); }}, ['›']);
+  const prev = el('button', {role:'button', ariaLabel:'Anterior', class:'btn', onClick:() => { changeMonth(-1); renderFechaHora(container); }}, ['‹']);
+  const next = el('button', {role:'button', ariaLabel:'Siguiente', class:'btn', onClick:() => { changeMonth(+1); renderFechaHora(container); }}, ['›']);
   const label = el('div', {}, [currentMonth().label]);
   nav.append(prev, label, next);
   container.append(nav);
@@ -133,11 +175,11 @@ function renderFechaHora(container) {
   weekdays.forEach(w => wk.append(el('div', {}, [w])));
   container.append(wk);
 
-  // Days
+  // Days grid
   const month = currentMonth();
   const enabled = new Set((month.enabled_days||[]).map(String)); // empty → all enabled
   const grid = el('div', {class:'daysgrid', role:'grid'}, []);
-  const daysInMonth = new Date(month.year, month.month, 0).getDate(); // 1..12
+  const daysInMonth = new Date(month.year, month.month, 0).getDate();
   for (let d=1; d<=daysInMonth; d++) {
     const dayStr = String(d).padStart(2,'0');
     const dateISO = `${month.year}-${String(month.month).padStart(2,'0')}-${dayStr}`;
@@ -150,18 +192,22 @@ function renderFechaHora(container) {
       onClick: clickable ? () => {
         state.selected.date = dateISO;
         state.selected.time = null;
-        renderTimeSlots(container);
+        const hasSlots = renderTimeSlots(container); // returns boolean
+        // Enable/disable Step 4 based on availability for selected day
+        setStep4Enabled(hasSlots);
+        if (hasSlots) openPanel(4); // only open if available
       } : undefined
     };
-    if (!clickable) btnAttrs.disabled = true; // only set when non-clickable
+    if (!clickable) btnAttrs.disabled = true;
 
     const btn = el('button', btnAttrs, [dayStr]);
     grid.append(btn);
   }
   container.append(grid);
 
-  // Slots / no slots
-  renderTimeSlots(container);
+  // Slots / "no slots" message for previously-selected date
+  const has = renderTimeSlots(container);
+  setStep4Enabled(Boolean(has && state.selected.date)); // ensure consistency on re-render
 }
 
 function currentMonth() {
@@ -179,7 +225,7 @@ function changeMonth(delta) {
 
 function renderTimeSlots(container) {
   container.querySelectorAll('.slots, .muted').forEach(n => n.remove());
-  if (!state.selected.date) return;
+  if (!state.selected.date) return false;
 
   const flags = state.schema.flags || {};
   const month = currentMonth();
@@ -188,18 +234,23 @@ function renderTimeSlots(container) {
 
   if (times.length === 0) {
     container.append(el('div', {class:'muted'}, [state.schema.fecha_hora.no_slots_msg]));
-    return;
+    return false;
   }
 
   const wrap = el('div', {class:'slots'}, []);
   times.forEach(t => {
-    const b = el('button', {class:'slotbtn', role:'button', onClick:() => { state.selected.time = t; openPanel(4);} }, [t]);
+    const b = el('button', {class:'slotbtn', role:'button', onClick:() => {
+      state.selected.time = t;
+      // Step 4 is already enabled; keep it open
+      openPanel(4);
+    }}, [t]);
     wrap.append(b);
   });
   container.append(wrap);
+  return true;
 }
 
-/* ---------- CONTACTO ---------- */
+/* ---------- Panel 4: CONTACTO ---------- */
 function renderContacto(container) {
   container.innerHTML = "";
   const f = state.schema.contacto.fields || [];
@@ -216,26 +267,19 @@ function renderContacto(container) {
   confirm.append(el('button', {
     class:'btn primary',
     role:'button',
-    'ariaLabel': state.schema.contacto.confirm_text || 'Confirmar',
+    ariaLabel: state.schema.contacto.confirm_text || 'Confirmar',
     onClick: onConfirm
   }, [state.schema.contacto.confirm_text || 'Confirmar']));
   container.append(confirm);
-}
-
-function openPanel(n) {
-  const panels = document.querySelectorAll('.panel');
-  panels.forEach((p, i) => {
-    const expanded = (i <= (n-1));
-    p.setAttribute('aria-expanded', String(expanded));
-    p.querySelector('.hdr').setAttribute('aria-expanded', String(expanded));
-  });
-  qs('#successBox').style.display = 'none';
 }
 
 function onConfirm() {
   for (const f of state.schema.contacto.fields) {
     if (!state.user[f.name]) { alert('Falta ' + f.label); return; }
   }
+  // Optional: enforce a time selection if your flow requires it
+  // if (!state.selected.time) { alert('Seleccione una hora.'); return; }
+
   const s = state.schema;
   qs('#successTitle').textContent = s.contacto.success_title;
   const msg = (s.contacto.success_msg || '')

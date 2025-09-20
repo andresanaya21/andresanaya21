@@ -12,10 +12,11 @@ def api_schema():
         return Response(f"schema.json is invalid JSON:\n{e}", status=500, mimetype="text/plain")
 
     # Optional flags via query string (e.g., ?no_slots=1)
-    data["flags"] = {
+    flags = {
         "no_slots": request.args.get("no_slots") == "1",
         "captcha": request.args.get("captcha") == "1"
     }
+    data["flags"] = flags
     return jsonify(data)
 
 @app.route('/')

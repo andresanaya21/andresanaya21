@@ -9,7 +9,7 @@
   },
 
   "tramite": {
-    "panel_title": "SELECCIONAR TRAMITE",
+    "panel_title": "SELECCIONAR TRÁMITE",
     "legend": "Elija Trámites",
     "options": [
       "Registro General",
@@ -22,7 +22,7 @@
   "fecha_hora": {
     "panel_title": "SELECCIONAR FECHA Y HORA",
     "intro": "Por favor, seleccione una fecha y una hora",
-    "no_slots_msg": "No hay horas disponibles para el número seleccionado de personas y tramite",
+    "no_slots_msg": "No hay horas disponibles para el número seleccionado de personas y trámite",
     "months": [
       {
         "year": 2025,
