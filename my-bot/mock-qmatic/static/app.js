@@ -1,21 +1,24 @@
 const qs = s => document.querySelector(s);
-const el = (tag, attrs={}, children=[]) => {
+
+// FIXED helper: skips attributes when value is undefined/null
+const el = (tag, attrs = {}, children = []) => {
   const n = document.createElement(tag);
-  for (const [k,v] of Object.entries(attrs)) {
+  for (const [k, v] of Object.entries(attrs)) {
     if (k === "class") n.className = v;
     else if (k.startsWith("on")) n.addEventListener(k.slice(2), v);
     else if (k === "role") n.setAttribute("role", v);
     else if (k === "ariaLabel") n.setAttribute("aria-label", v);
-    else n.setAttribute(k, v);
+    else if (v !== undefined && v !== null) n.setAttribute(k, v);
   }
-  for (const c of (Array.isArray(children)?children:[children])) n.append(c);
+  (Array.isArray(children) ? children : [children]).forEach(c => n.append(c));
   return n;
 };
 
 const state = {
   schema: null,
   selected: { sucursal:null, tramite:null, date:null, time:null },
-  user: { name:"", id:"", email:"", phone:"" }
+  user: { name:"", id:"", email:"", phone:"" },
+  monthIndex: 0
 };
 
 async function bootstrap() {
@@ -23,8 +26,6 @@ async function bootstrap() {
   state.schema = await res.json();
 
   qs('#pageTitle').textContent = state.schema.title || 'Reserva de cita';
-
-  // cookie
   qs('#cookieText').textContent = state.schema.cookie?.text || 'Usamos cookies.';
   qs('#acceptCookies').textContent = state.schema.cookie?.accept || 'Aceptar';
   qs('#acceptCookies').addEventListener('click', () => qs('#cookie').remove());
@@ -35,36 +36,27 @@ async function bootstrap() {
 function renderAccordion() {
   const root = qs('#accordion'); root.innerHTML = "";
 
-  // Panel 1 — SUCURSAL
   root.append(makePanel({
-    number: 1,
-    variant: 1,
+    number: 1, variant: 1,
     title: state.schema.sucursal.panel_title,
     subtitle: state.schema.sucursal.subtitle,
-    content: renderSucursal,
-    expanded: true
+    content: renderSucursal, expanded: true
   }));
 
-  // Panel 2 — TRÁMITE
   root.append(makePanel({
-    number: 2,
-    variant: 2,
+    number: 2, variant: 2,
     title: state.schema.tramite.panel_title,
     content: renderTramite
   }));
 
-  // Panel 3 — FECHA Y HORA
   root.append(makePanel({
-    number: 3,
-    variant: 3,
+    number: 3, variant: 3,
     title: state.schema.fecha_hora.panel_title,
     content: renderFechaHora
   }));
 
-  // Panel 4 — CONTACTO
   root.append(makePanel({
-    number: 4,
-    variant: 4,
+    number: 4, variant: 4,
     title: state.schema.contacto.panel_title,
     content: renderContacto
   }));
@@ -85,32 +77,27 @@ function makePanel({number, variant, title, subtitle, content, expanded=false}) 
     panel.setAttribute('aria-expanded', String(!cur));
     hdrBtn.setAttribute('aria-expanded', String(!cur));
   });
-
   const body = el('div', {class:'body'}, []);
-  content(body); // inject
+  content(body);
   panel.append(hdrBtn, body);
   return panel;
 }
 
-// Panel bodies
+/* ---------- SUCURSAL ---------- */
 function renderSucursal(container) {
-  const opts = state.schema.sucursal.options || [];
   const list = el('div', {class:'radio-list', role:'group', ariaLabel: state.schema.sucursal.panel_title}, []);
-  opts.forEach((name, idx) => {
+  (state.schema.sucursal.options||[]).forEach((name, idx) => {
     const id = 'suc_'+idx;
     const row = el('label', {class:'radio-item', for:id});
     const input = el('input', {type:'radio', id, name:'sucursal', value:name});
-    input.addEventListener('change', () => {
-      state.selected.sucursal = name;
-      // open next panel
-      openPanel(2);
-    });
+    input.addEventListener('change', () => { state.selected.sucursal = name; openPanel(2); });
     row.append(input, el('span', {}, [name]));
     list.append(row);
   });
   container.append(list);
 }
 
+/* ---------- TRÁMITE ---------- */
 function renderTramite(container) {
   if (state.schema.tramite.legend) container.append(el('div', {style:'margin-bottom:8px; color:#555'}, [state.schema.tramite.legend]));
   const list = el('div', {class:'radio-list', role:'group', ariaLabel: state.schema.tramite.panel_title}, []);
@@ -118,80 +105,103 @@ function renderTramite(container) {
     const id = 'tra_'+idx;
     const row = el('label', {class:'radio-item', for:id});
     const input = el('input', {type:'radio', id, name:'tramite', value:name});
-    input.addEventListener('change', () => {
-      state.selected.tramite = name;
-      openPanel(3);
-    });
+    input.addEventListener('change', () => { state.selected.tramite = name; openPanel(3); });
     row.append(input, el('span', {}, [name]));
     list.append(row);
   });
   container.append(list);
 }
 
+/* ---------- FECHA Y HORA (month nav + per-date slots) ---------- */
 function renderFechaHora(container) {
+  container.innerHTML = "";
+
+  // Intro
   container.append(el('div', {class:'monthbar'}, [state.schema.fecha_hora.intro]));
+
+  // Nav
   const nav = el('div', {class:'monthnav'});
-  nav.append(
-    el('button', {role:'button', 'ariaLabel':'Anterior', class:'btn'}, ['‹']),
-    el('div', {}, [state.schema.fecha_hora.month_label]),
-    el('button', {role:'button', 'ariaLabel':'Siguiente', class:'btn'}, ['›'])
-  );
+  const prev = el('button', {role:'button', 'ariaLabel':'Anterior', class:'btn', onClick:() => { changeMonth(-1); renderFechaHora(container); }}, ['‹']);
+  const next = el('button', {role:'button', 'ariaLabel':'Siguiente', class:'btn', onClick:() => { changeMonth(+1); renderFechaHora(container); }}, ['›']);
+  const label = el('div', {}, [currentMonth().label]);
+  nav.append(prev, label, next);
   container.append(nav);
 
-  const weekdays = el('div', {class:'weekrow'}, []);
-  (state.schema.fecha_hora.weekdays||[]).forEach(w => weekdays.append(el('div', {}, [w])));
-  container.append(weekdays);
+  // Weekdays
+  const weekdays = ["lu","ma","mi","ju","vi","sá","do"];
+  const wk = el('div', {class:'weekrow'}, []);
+  weekdays.forEach(w => wk.append(el('div', {}, [w])));
+  container.append(wk);
 
-  const enabled = new Set(state.schema.fecha_hora.enabled_days || []);
+  // Days
+  const month = currentMonth();
+  const enabled = new Set((month.enabled_days||[]).map(String)); // empty → all enabled
   const grid = el('div', {class:'daysgrid', role:'grid'}, []);
-  for (let d=1; d<=30; d++) {
-    const day = String(d).padStart(2,'0');
-    const isEnabled = enabled.has(String(d));
-    const btn = el('button', {
+  const daysInMonth = new Date(month.year, month.month, 0).getDate(); // 1..12
+  for (let d=1; d<=daysInMonth; d++) {
+    const dayStr = String(d).padStart(2,'0');
+    const dateISO = `${month.year}-${String(month.month).padStart(2,'0')}-${dayStr}`;
+    const clickable = enabled.size === 0 || enabled.has(String(d));
+
+    const btnAttrs = {
       class:'day',
       role:'button',
-      "ariaLabel": `Día ${d}`,
-      disabled: isEnabled ? undefined : true,
-      onClick: isEnabled ? () => {
-        state.selected.date = `2025-09-${day}`;
-        // show slots below calendar
+      ariaLabel:`Día ${d}`,
+      onClick: clickable ? () => {
+        state.selected.date = dateISO;
+        state.selected.time = null;
         renderTimeSlots(container);
       } : undefined
-    }, [day]);
+    };
+    if (!clickable) btnAttrs.disabled = true; // only set when non-clickable
+
+    const btn = el('button', btnAttrs, [dayStr]);
     grid.append(btn);
   }
   container.append(grid);
 
-  // initial slots (none until a date picked)
+  // Slots / no slots
   renderTimeSlots(container);
 }
 
+function currentMonth() {
+  const months = state.schema.fecha_hora.months || [];
+  if (months.length === 0) return { year: 2025, month: 9, label: "septiembre 2025", enabled_days: [], times_by_date: {} };
+  return months[Math.max(0, Math.min(state.monthIndex, months.length - 1))];
+}
+function changeMonth(delta) {
+  const months = state.schema.fecha_hora.months || [];
+  if (months.length === 0) return;
+  state.monthIndex = Math.max(0, Math.min(state.monthIndex + delta, months.length - 1));
+  state.selected.date = null;
+  state.selected.time = null;
+}
+
 function renderTimeSlots(container) {
-  // remove prior slots area if present
   container.querySelectorAll('.slots, .muted').forEach(n => n.remove());
-
-  const flags = state.schema.flags || {};
-  const times = state.schema.fecha_hora.times || [];
-
   if (!state.selected.date) return;
 
-  if (flags.no_slots || times.length === 0) {
+  const flags = state.schema.flags || {};
+  const month = currentMonth();
+  const timesMap = month.times_by_date || {};
+  const times = flags.no_slots ? [] : (timesMap[state.selected.date] || []);
+
+  if (times.length === 0) {
     container.append(el('div', {class:'muted'}, [state.schema.fecha_hora.no_slots_msg]));
     return;
   }
 
   const wrap = el('div', {class:'slots'}, []);
   times.forEach(t => {
-    const b = el('button', {class:'slotbtn', role:'button', onClick:() => {
-      state.selected.time = t;
-      openPanel(4);
-    }}, [t]);
+    const b = el('button', {class:'slotbtn', role:'button', onClick:() => { state.selected.time = t; openPanel(4);} }, [t]);
     wrap.append(b);
   });
   container.append(wrap);
 }
 
+/* ---------- CONTACTO ---------- */
 function renderContacto(container) {
+  container.innerHTML = "";
   const f = state.schema.contacto.fields || [];
   f.forEach(field => {
     const row = el('div', {class:'row'});
@@ -213,23 +223,19 @@ function renderContacto(container) {
 }
 
 function openPanel(n) {
-  // n is the panel number (1..4)
   const panels = document.querySelectorAll('.panel');
   panels.forEach((p, i) => {
-    const expanded = (i <= (n-1)); // open current and previous
+    const expanded = (i <= (n-1));
     p.setAttribute('aria-expanded', String(expanded));
     p.querySelector('.hdr').setAttribute('aria-expanded', String(expanded));
   });
-  // ensure success box hidden if navigating
   qs('#successBox').style.display = 'none';
 }
 
 function onConfirm() {
-  // simple required validation
   for (const f of state.schema.contacto.fields) {
     if (!state.user[f.name]) { alert('Falta ' + f.label); return; }
   }
-  // show success
   const s = state.schema;
   qs('#successTitle').textContent = s.contacto.success_title;
   const msg = (s.contacto.success_msg || '')

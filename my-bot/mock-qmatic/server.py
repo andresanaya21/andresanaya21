@@ -1,13 +1,17 @@
-from flask import Flask, send_from_directory, request, jsonify
+from flask import Flask, send_from_directory, request, jsonify, Response
 import json, os
 
 app = Flask(__name__, static_url_path='', static_folder='static')
 
 @app.get('/api/schema')
 def api_schema():
-    with open('schema.json', 'r', encoding='utf-8') as f:
-        data = json.load(f)
-    # pass-through query flags to simulate site states
+    try:
+        with open('schema.json', 'r', encoding='utf-8') as f:
+            data = json.load(f)
+    except json.JSONDecodeError as e:
+        return Response(f"schema.json is invalid JSON:\n{e}", status=500, mimetype="text/plain")
+
+    # Optional flags via query string (e.g., ?no_slots=1)
     data["flags"] = {
         "no_slots": request.args.get("no_slots") == "1",
         "captcha": request.args.get("captcha") == "1"

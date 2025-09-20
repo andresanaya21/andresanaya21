@@ -22,11 +22,30 @@
   "fecha_hora": {
     "panel_title": "SELECCIONAR FECHA Y HORA",
     "intro": "Por favor, seleccione una fecha y una hora",
-    "month_label": "septiembre 2025",
-    "weekdays": ["lu","ma","mi","ju","vi","sá","do"],
-    "enabled_days": ["11","12","18","25"],
     "no_slots_msg": "No hay horas disponibles para el número seleccionado de personas y tramite",
-    "times": ["09:00","09:20","09:40","10:00","10:20","10:40","11:00","11:20"]
+    "months": [
+      {
+        "year": 2025,
+        "month": 9,
+        "label": "septiembre 2025",
+        "enabled_days": ["22", "23", "24"],
+        "times_by_date": {
+          "2025-09-22": ["09:00", "09:20", "09:40", "10:00"],
+          "2025-09-23": ["10:00", "10:20", "10:40"],
+          "2025-09-24": ["11:00", "11:20"]
+        }
+      },
+      {
+        "year": 2025,
+        "month": 10,
+        "label": "octubre 2025",
+        "enabled_days": [],
+        "times_by_date": {
+          "2025-10-02": ["09:00", "09:20"],
+          "2025-10-03": ["10:00"]
+        }
+      }
+    ]
   },
 
   "contacto": {
