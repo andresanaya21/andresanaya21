@@ -27,6 +27,9 @@ BOT_TIMEOUT = int(os.getenv("BOT_TIMEOUT", "180"))         # 3 minutes
 # Optional additional env vars passed to the bot process (comma-separated VAR=VAL)
 BOT_EXTRA_ENV = os.getenv("BOT_EXTRA_ENV", "")             # e.g. "HEADLESS=true,SLOW_MO_MS=0"
 
+# Optional start offset (seconds) to stagger multiple instances
+START_OFFSET = int(os.getenv("START_OFFSET", "0"))
+
 tz = pytz.timezone(TZ)
 
 # -------------------------
@@ -206,6 +209,10 @@ def main():
         start=parse_hhmm(WINDOW_START or "12:10"),
         end=parse_hhmm(WINDOW_END or "14:00"),
     )
+
+    if START_OFFSET > 0:
+        log(f"start offset — sleeping {START_OFFSET}s before entering loop")
+        time.sleep(START_OFFSET)
 
     runner = TickRunner(window)
     runner.loop()

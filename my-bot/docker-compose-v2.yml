@@ -1,0 +1,117 @@
+# ---- base service bits reused by all tickers ----
+x-service-base: &service-base
+  build:
+    context: ./bot
+    dockerfile: Dockerfile
+  volumes:
+    - ./bot/artifacts:/app/artifacts
+    - ./bot/videos:/app/videos
+  restart: unless-stopped
+  command: ["python", "tick_runner.py"]
+
+# ---- base environment mapping reused by all tickers ----
+x-env-base: &env-base
+  BASE_URL: "https://citaprevia.ciencia.gob.es/qmaticwebbooking/#/"
+  TARGET_TRAMITE: "Asistencia telefónica para la homologación y equivalencia de títulos universitarios extranjeros"
+  HEADLESS: "true"
+  SLOW_MO_MS: "0"
+  MAX_MONTHS_TO_SCAN: "6"
+  DEFAULT_TIMEOUT_MS: "25000"
+  TZ: "Europe/Madrid"
+
+  # tick runner settings
+  TICK_INTERVAL: "5"
+  BOT_TIMEOUT: "240"
+  WINDOW_DAYS: "SUN,MON,TUE,WED"
+  WINDOW_START: "12:10"
+  WINDOW_END: "14:00"
+
+  # default; overridden per service
+  START_OFFSET: "0"
+
+  # forwarded to child bot process
+  BOT_EXTRA_ENV: >-
+    HEADLESS=true,
+    SLOW_MO_MS=0,
+    DEFAULT_TIMEOUT_MS=30000,
+    CONTACT_NAME=Monica,
+    CONTACT_LASTNAME=Pérez Villarroel,
+    CONTACT_ID=Z0428685Q,
+    CONTACT_EMAIL=monicaperezvillarroel060@gmail.com,
+    CONTACT_EMAIL_CONFIRM=monicaperezvillarroel060@gmail.com,
+    CONTACT_PHONE_CC=+34,
+    CONTACT_PHONE=613304514,
+    CONTACT_PHONE_CONFIRM=613304514,
+    CONTACT_NOTES=información de expediente 2022-06976,
+    CONTACT_CONSENT=true
+
+services:
+  ticker1:
+    <<: *service-base
+    container_name: qmatic-bot-ticker-1
+    environment:
+      <<: *env-base
+      START_OFFSET: "0"
+
+  ticker2:
+    <<: *service-base
+    container_name: qmatic-bot-ticker-2
+    environment:
+      <<: *env-base
+      START_OFFSET: "1"
+
+  ticker3:
+    <<: *service-base
+    container_name: qmatic-bot-ticker-3
+    environment:
+      <<: *env-base
+      START_OFFSET: "2"
+
+  ticker4:
+    <<: *service-base
+    container_name: qmatic-bot-ticker-4
+    environment:
+      <<: *env-base
+      START_OFFSET: "3"
+
+  ticker5:
+    <<: *service-base
+    container_name: qmatic-bot-ticker-5
+    environment:
+      <<: *env-base
+      START_OFFSET: "4"
+
+  ticker6:
+    <<: *service-base
+    container_name: qmatic-bot-ticker-6
+    environment:
+      <<: *env-base
+      START_OFFSET: "5"
+
+  ticker7:
+    <<: *service-base
+    container_name: qmatic-bot-ticker-7
+    environment:
+      <<: *env-base
+      START_OFFSET: "6"
+
+  ticker8:
+    <<: *service-base
+    container_name: qmatic-bot-ticker-8
+    environment:
+      <<: *env-base
+      START_OFFSET: "7"
+
+  ticker9:
+    <<: *service-base
+    container_name: qmatic-bot-ticker-9
+    environment:
+      <<: *env-base
+      START_OFFSET: "8"
+
+  ticker10:
+    <<: *service-base
+    container_name: qmatic-bot-ticker-10
+    environment:
+      <<: *env-base
+      START_OFFSET: "9"

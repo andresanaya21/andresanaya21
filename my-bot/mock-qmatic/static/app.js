@@ -10,20 +10,23 @@ const el = (tag, attrs = {}, children = []) => {
     else if (k === "ariaLabel") n.setAttribute("aria-label", v);
     else if (v !== undefined && v !== null) n.setAttribute(k, v);
   }
-  (Array.isArray(children) ? children : [children]).forEach(c => n.append(c));
+  (Array.isArray(children) ? children : [children]).forEach(c => {
+    if (c !== undefined && c !== null && c !== '') n.append(c);
+  });
   return n;
 };
 
 const state = {
   schema: null,
   selected: { sucursal:null, tramite:null, date:null, time:null },
-  user: { name:"", id:"", email:"", phone:"" },
+  user: { name:"", lastname:"", id:"", email:"", email_confirm:"", phone_cc:"+34", phone:"", phone_confirm:"", notes:"", consent:false },
   monthIndex: 0,
   mode: 'book' // 'book' | 'notify'
 };
 
 async function bootstrap() {
-  const res = await fetch('/api/schema' + location.search);
+  // IMPORTANT: do NOT forward no_slots from the URL accidentally
+  const res = await fetch('/api/schema');
   state.schema = await res.json();
 
   qs('#pageTitle').textContent = state.schema.title || 'Reserva de cita';
@@ -32,7 +35,6 @@ async function bootstrap() {
   qs('#acceptCookies').addEventListener('click', () => qs('#cookie').remove());
 
   renderAccordion();
-  // Step 4 starts disabled until: (a) user chooses a date with slots OR (b) user chooses "Avisarme"
   setStep4Enabled(false);
 }
 
@@ -72,7 +74,7 @@ function makePanel({number, variant, step, title, subtitle, content, expanded=fa
     'data-variant': String(variant),
     'data-step': String(step),
     'aria-expanded': String(expanded)
-  }, []);
+  });
   const hdrBtn = el('button', {class:'hdr', role:'button', 'aria-expanded': String(expanded)});
   const left = el('div', {class:'left'});
   left.append(el('div', {class:'badge'}, [String(number)]));
@@ -82,12 +84,12 @@ function makePanel({number, variant, step, title, subtitle, content, expanded=fa
   ]));
   hdrBtn.append(left, el('div', {class:'chev'}, ['▾']));
   hdrBtn.addEventListener('click', () => {
-    if (panel.getAttribute('data-disabled') === 'true') return; // block if disabled
+    if (panel.getAttribute('data-disabled') === 'true') return;
     const cur = panel.getAttribute('aria-expanded') === 'true';
     panel.setAttribute('aria-expanded', String(!cur));
     hdrBtn.setAttribute('aria-expanded', String(!cur));
   });
-  const body = el('div', {class:'body'}, []);
+  const body = el('div', {class:'body'});
   content(body);
   panel.append(hdrBtn, body);
   return panel;
@@ -114,7 +116,6 @@ function openPanel(n) {
   panels.forEach((p, i) => {
     const expanded = (i <= (n-1));
     if (p.getAttribute('data-disabled') === 'true' && expanded && p.getAttribute('data-step') === '4') {
-      // don't force-open disabled step 4
       p.setAttribute('aria-expanded', 'false');
       const hdr = p.querySelector('.hdr'); hdr?.setAttribute('aria-expanded', 'false');
       return;
@@ -158,14 +159,10 @@ function renderTramite(container) {
 /* ---------- Panel 3: FECHA Y HORA ---------- */
 function renderFechaHora(container) {
   container.innerHTML = "";
-
-  // Reset to booking mode whenever we open the calendar
   state.mode = 'book';
 
-  // Intro
   container.append(el('div', {class:'monthbar'}, [state.schema.fecha_hora.intro]));
 
-  // Nav
   const nav = el('div', {class:'monthnav'});
   const prev = el('button', {role:'button', ariaLabel:'Anterior', class:'btn', onClick:() => { changeMonth(-1); renderFechaHora(container); }}, ['‹']);
   const next = el('button', {role:'button', ariaLabel:'Siguiente', class:'btn', onClick:() => { changeMonth(+1); renderFechaHora(container); }}, ['›']);
@@ -173,22 +170,22 @@ function renderFechaHora(container) {
   nav.append(prev, label, next);
   container.append(nav);
 
-  // Weekdays
   const weekdays = ["lu","ma","mi","ju","vi","sá","do"];
   const wk = el('div', {class:'weekrow'}, []);
   weekdays.forEach(w => wk.append(el('div', {}, [w])));
   container.append(wk);
 
-  // Days grid
   const month = currentMonth();
-  const enabled = new Set((month.enabled_days||[]).map(String)); // empty → all enabled
+  // undefined/null -> all enabled; empty [] -> none enabled
+  const raw = month.enabled_days;
+  const enableAll = (raw == null);
+  const enabled = new Set((raw || []).map(d => String(parseInt(d, 10))));
   const grid = el('div', {class:'daysgrid', role:'grid'}, []);
   const daysInMonth = new Date(month.year, month.month, 0).getDate();
   for (let d=1; d<=daysInMonth; d++) {
     const dayStr = String(d).padStart(2,'0');
     const dateISO = `${month.year}-${String(month.month).padStart(2,'0')}-${dayStr}`;
-    const clickable = enabled.size === 0 || enabled.has(String(d));
-
+    const clickable = enableAll ? true : enabled.has(String(d));
     const btnAttrs = {
       class:'day',
       role:'button',
@@ -197,25 +194,23 @@ function renderFechaHora(container) {
       onClick: clickable ? () => {
         state.selected.date = dateISO;
         state.selected.time = null;
-        markSelectedDay(dateISO);        // highlight day
-        const hasSlots = renderTimeSlots(container); // also (re)builds slots & no-slot box
-        setStep4Enabled(hasSlots);       // enable step 4 only if slots OR if user picks "Avisarme"
+        markSelectedDay(dateISO);
+        const hasSlots = renderTimeSlots(container);
+        setStep4Enabled(hasSlots);
         if (hasSlots) openPanel(4);
-        updatePickSummary(container);    // show summary
+        updatePickSummary(container);
       } : undefined
     };
     if (!clickable) btnAttrs.disabled = true;
-
     const btn = el('button', btnAttrs, [dayStr]);
     if (state.selected.date === dateISO) btn.classList.add('selected');
     grid.append(btn);
   }
   container.append(grid);
 
-  // Slots / "no slots" message for previously-selected date
   const has = renderTimeSlots(container);
   setStep4Enabled(Boolean(has && state.selected.date));
-  updatePickSummary(container);          // keep summary consistent
+  updatePickSummary(container);
 }
 
 function currentMonth() {
@@ -234,19 +229,32 @@ function changeMonth(delta) {
 /* ---------- Build slots or the "no availability" box ---------- */
 function renderTimeSlots(container) {
   container.querySelectorAll('.slots, .muted, .emptybox, .pick-summary').forEach(n => n.remove());
-
   if (!state.selected.date) return false;
 
   const flags = state.schema.flags || {};
   const month = currentMonth();
   const timesMap = month.times_by_date || {};
-  const times = flags.no_slots ? [] : (timesMap[state.selected.date] || []);
+  let times = flags.no_slots ? [] : (timesMap[state.selected.date] || []);
+
+  // Client fallback: if the selected date is ENABLED but has no times, show default_times
+  if (!flags.no_slots && times.length === 0) {
+    const raw = month.enabled_days;
+    const enableAll = (raw == null);
+    const enabled = new Set((raw || []).map(d => String(parseInt(d, 10))));
+    const dayNum = String(parseInt(state.selected.date.slice(-2), 10));
+    if (enableAll || enabled.has(dayNum)) {
+      times = (state.schema.fecha_hora.default_times || ["09:00","09:20","09:40","10:00","10:20","10:40"]);
+    }
+  }
 
   if (times.length === 0) {
-    // No slots for this date → show empty state with actions
+    state.selected.time = null;
     const box = el('div', {class:'emptybox'}, [
       el('div', {class:'empty-title'}, [state.schema.fecha_hora.no_slots_title || 'Sin disponibilidad']),
-      el('div', {class:'empty-msg'}, [state.schema.fecha_hora.no_slots_msg]),
+      el('div', {class:'empty-msg'}, [
+        state.schema.fecha_hora.no_slots_msg
+          || 'No hay horas disponibles para el número seleccionado de personas y trámite'
+      ]),
       el('div', {class:'actions'}, [
         el('button', {class:'btn', onClick: onFindFirstAvailable}, [state.schema.fecha_hora.find_first_btn || 'Buscar primera fecha disponible']),
         el('button', {class:'btn primary', onClick: onNotifyMe}, [state.schema.fecha_hora.notify_btn || 'Avisarme cuando haya citas'])
@@ -265,10 +273,12 @@ function renderTimeSlots(container) {
       onClick: () => {
         state.mode = 'book';
         state.selected.time = t;
-        markSelectedTime(t);               // highlight time
+        markSelectedTime(t);
         openPanel(4);
         setStep4Enabled(true);
-        updatePickSummary(container);      // show summary
+        updatePickSummary(container);
+        // Also re-evaluate Step 4 button enabled state
+        reevaluateFinishButtons();
       }
     }, [t]);
     wrap.append(b);
@@ -277,15 +287,14 @@ function renderTimeSlots(container) {
   return true;
 }
 
-/* ---------- Actions for the no-availability box ---------- */
+/* ---------- Actions when no availability ---------- */
 function onFindFirstAvailable() {
-  // Scan months/dates for first available slot from the current view forward
   const months = state.schema.fecha_hora.months || [];
   let startIdx = state.monthIndex;
 
   for (let m = startIdx; m < months.length; m++) {
     const mobj = months[m];
-    const dates = Object.keys(mobj.times_by_date || {}).sort(); // ISO dates sorted (earliest first)
+    const dates = Object.keys(mobj.times_by_date || {}).sort();
     for (const dateISO of dates) {
       const slots = (mobj.times_by_date || {})[dateISO] || [];
       if (slots.length > 0) {
@@ -293,30 +302,23 @@ function onFindFirstAvailable() {
         state.selected.date = dateISO;
         state.selected.time = slots[0];
         state.mode = 'book';
-        // Re-render step 3 to reflect new month/day and slots
         const p3Body = document.querySelector('.panel[data-step="3"] .body');
         if (p3Body) renderFechaHora(p3Body);
-        // Ensure highlights and open step 4
         markSelectedDay(dateISO);
         markSelectedTime(state.selected.time);
         setStep4Enabled(true);
         openPanel(4);
+        reevaluateFinishButtons();
         return;
       }
     }
   }
-  // Nothing found at all → keep box; you may alert if desired
   alert(state.schema.fecha_hora.no_any_availability || 'No se han encontrado citas en los meses cargados.');
 }
 
-function onNotifyMe() {
-  // Switch to waitlist mode, enable Step 4 even without time/date
-  state.mode = 'notify';
-  setStep4Enabled(true);
-  openPanel(4);
-}
+function onNotifyMe() { state.mode = 'notify'; setStep4Enabled(true); openPanel(4); }
 
-/* ---------- Helpers to mark selected items ---------- */
+/* ---------- Helpers ---------- */
 function markSelectedDay(dateISO) {
   document.querySelectorAll('.day').forEach(b => b.classList.remove('selected'));
   const btn = document.querySelector(`.day[data-date="${dateISO}"]`);
@@ -328,14 +330,12 @@ function markSelectedTime(timeStr) {
   if (btn) btn.classList.add('selected');
 }
 
-/* ---------- Tiny summary under the calendar ---------- */
+/* ---------- Summary under calendar ---------- */
 function updatePickSummary(container) {
   const old = container.querySelector('.pick-summary');
   if (old) old.remove();
-
   const hasDate = !!state.selected.date;
   const hasTime = !!state.selected.time;
-
   if (!hasDate && !hasTime && state.mode !== 'notify') return;
 
   const wrap = el('div', {class:'pick-summary'});
@@ -349,42 +349,178 @@ function updatePickSummary(container) {
   container.append(wrap);
 }
 
-/* ---------- Panel 4: CONTACTO ---------- */
+/* ---------- VALIDATION + FINISH BUTTONS ---------- */
+
+// Return true if contact form is valid for the current mode
+function isContactValid() {
+  const cfg = state.schema.contacto;
+
+  // Required fields
+  for (const f of (cfg.fields || [])) {
+    if (state.mode === 'notify') {
+      // For notify mode, require: name, email (+ confirm), consent
+      const notifyRequired = new Set(['name', 'email', 'email_confirm']);
+      if (!notifyRequired.has(f.name)) continue;
+    }
+    if (f.required && !state.user[f.name]) return false;
+  }
+
+  // Email match
+  if (state.user.email || state.user.email_confirm) {
+    if (state.user.email !== state.user.email_confirm) return false;
+  }
+
+  // Phone match (only in book mode if fields exist)
+  if (state.mode === 'book' && (state.user.phone || state.user.phone_confirm)) {
+    if (state.user.phone !== state.user.phone_confirm) return false;
+  }
+
+  // Consent
+  if (state.schema.contacto.consent?.required && !state.user.consent) return false;
+
+  // In book mode we also need a picked time
+  if (state.mode === 'book' && !state.selected.time) return false;
+
+  return true;
+}
+
+// Enable/disable & show/hide the final action button(s)
+function reevaluateFinishButtons() {
+  const btn = qs('#btnAceptar');       // main finish button
+  const btnAlt = qs('#btnCogerCita');  // optional alt label (hidden)
+  const enabled = isContactValid();
+
+  [btn, btnAlt].forEach(b => {
+    if (!b) return;
+    if (enabled) {
+      b.removeAttribute('disabled');
+      b.removeAttribute('aria-disabled');
+    } else {
+      b.setAttribute('disabled', 'true');
+      b.setAttribute('aria-disabled', 'true');
+    }
+  });
+}
+
+/* ---------- Panel 4: CONTACTO (upgraded) ---------- */
 function renderContacto(container) {
   container.innerHTML = "";
-  const f = state.schema.contacto.fields || [];
-  f.forEach(field => {
-    const row = el('div', {class:'row'});
-    const label = el('label', {}, [field.label]); label.htmlFor = 'input_'+field.name;
-    const input = el('input', {id:'input_'+field.name, placeholder: field.placeholder || field.label});
-    input.addEventListener('input', e => state.user[field.name] = e.target.value);
+  const cfg = state.schema.contacto;
+
+  // Build inputs
+  (cfg.fields || []).forEach(field => {
+    const row = el('div', {class:'row' + (field.rowClass ? ' '+field.rowClass : '')});
+    const labelText = field.required ? `${field.label} *` : field.label;
+
+    const label = el('label', {}, [labelText]); label.htmlFor = 'input_'+field.name;
+    let input;
+    if (field.type === 'textarea') {
+      input = el('textarea', {id:'input_'+field.name, placeholder: field.placeholder || field.label, rows: field.rows || 3});
+    } else {
+      input = el('input', {
+        id:'input_'+field.name,
+        placeholder: field.placeholder || field.label,
+        type: field.type || 'text',
+        value: field.default || ''
+      });
+    }
+    input.addEventListener('input', e => {
+      state.user[field.name] = e.target.value;
+      // auto-copy confirm fields if empty
+      if (field.name === 'email') {
+        const conf = qs('#input_email_confirm');
+        if (conf && !conf.value) conf.value = e.target.value;
+      }
+      if (field.name === 'phone') {
+        const confp = qs('#input_phone_confirm');
+        if (confp && !confp.value) confp.value = e.target.value;
+      }
+      // Each change may unlock the finish button
+      reevaluateFinishButtons();
+    });
+
+    // initialize defaults
+    if (field.default) {
+      state.user[field.name] = field.default;
+    }
+
     row.append(label, input);
     container.append(row);
   });
 
-  const confirm = el('div', {class:'confirm'});
-  const confirmLabel =
-    state.mode === 'notify'
-      ? (state.schema.contacto.notify_confirm_text || 'Guardar aviso')
-      : (state.schema.contacto.confirm_text || 'Confirmar');
+  // Consent checkbox
+  if (cfg.consent) {
+    const c = cfg.consent;
+    const row = el('div', {class:'row'});
+    const id = 'input_consent';
+    const box = el('input', {id, type:'checkbox'});
+    box.addEventListener('change', e => { state.user.consent = e.target.checked; reevaluateFinishButtons(); });
+    const lab = el('label', {for:id}, [c.label || 'Estoy informado/a sobre el tratamiento de mis datos personales']);
+    row.append(box, lab);
+    container.append(row);
+  }
 
-  confirm.append(el('button', {
+  // --- Final action area ---
+  const confirm = el('div', {class:'confirm'});
+
+  // Decide which label to show (simulate real site variance)
+  const finishVariants = ['ACEPTAR', 'Coger cita'];
+  const chosen = finishVariants[Math.floor(Math.random() * finishVariants.length)];
+  const chosenForNotify = cfg.notify_confirm_text || 'Guardar aviso';
+
+  // MAIN finish button (id = btnAceptar)
+  const mainBtn = el('button', {
+    id: 'btnAceptar',
     class:'btn primary',
     role:'button',
-    ariaLabel: confirmLabel,
-    onClick: onConfirm
-  }, [confirmLabel]));
+    ariaLabel: state.mode === 'notify' ? chosenForNotify : chosen,
+    onClick: onConfirm,
+    disabled: 'true',
+    'aria-disabled': 'true'
+  }, [state.mode === 'notify' ? chosenForNotify : chosen]);
+
+  // Optional hidden alt variant (helps testing different labels if you want to toggle it in dev tools)
+  const altLabel = (chosen === 'ACEPTAR') ? 'Coger cita' : 'ACEPTAR';
+  const altBtn = el('button', {
+    id: 'btnCogerCita',
+    class:'btn primary',
+    role:'button',
+    style:'display:none', // hidden by default
+    ariaLabel: altLabel,
+    onClick: onConfirm,
+    disabled: 'true',
+    'aria-disabled': 'true'
+  }, [altLabel]);
+
+  confirm.append(mainBtn, altBtn);
   container.append(confirm);
+
+  // Evaluate once on render (covers defaults like +34)
+  reevaluateFinishButtons();
 }
 
 function onConfirm() {
-  for (const f of state.schema.contacto.fields) {
-    if (!state.user[f.name]) { alert('Falta ' + f.label); return; }
+  const cfg = state.schema.contacto;
+
+  // Validate required fields
+  for (const f of cfg.fields) {
+    if (f.required && !state.user[f.name]) { alert('Falta ' + f.label); return; }
+  }
+  // Match email + confirm
+  if (state.user.email && state.user.email_confirm && state.user.email !== state.user.email_confirm) {
+    alert('El correo de confirmación no coincide.'); return;
+  }
+  // Match phone + confirm
+  if (state.user.phone && state.user.phone_confirm && state.user.phone !== state.user.phone_confirm) {
+    alert('El número de móvil de confirmación no coincide.'); return;
+  }
+  // Consent
+  if (cfg.consent?.required && !state.user.consent) {
+    alert('Debe aceptar el tratamiento de datos personales.'); return;
   }
 
   const s = state.schema;
   if (state.mode === 'notify') {
-    // Waitlist flow: no time is required
     qs('#successTitle').textContent = s.contacto.notify_success_title || 'Aviso registrado';
     const msg = (s.contacto.notify_success_msg || 'Te avisaremos cuando haya citas disponibles — {SERVICE}.')
       .replace('{SERVICE}', state.selected.tramite || '');
@@ -393,11 +529,10 @@ function onConfirm() {
     return;
   }
 
-  // Booking flow — optionally enforce time selection
   if (!state.selected.time) { alert('Seleccione una hora.'); return; }
 
-  qs('#successTitle').textContent = s.contacto.success_title;
-  const msg = (s.contacto.success_msg || '')
+  qs('#successTitle').textContent = s.contacto.success_title || 'Confirmación de cita';
+  const msg = (s.contacto.success_msg || 'Cita confirmada para {DATE} a las {TIME} — {SERVICE}')
     .replace('{DATE}', state.selected.date || '')
     .replace('{TIME}', state.selected.time || '')
     .replace('{SERVICE}', state.selected.tramite || '');
