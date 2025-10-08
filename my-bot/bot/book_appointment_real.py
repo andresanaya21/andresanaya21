@@ -1,489 +1,849 @@
 import os, re, sys, time
 from pathlib import Path
-from playwright.sync_api import Playwright, sync_playwright, expect
+from playwright.sync_api import Playwright, sync_playwright
 
 # ======================
-# CONFIG (env-overridable)
+# CONFIG
 # ======================
 BASE_URL = os.getenv("BASE_URL", "https://citaprevia.ciencia.gob.es/qmaticwebbooking/#/")
-TARGET_TRAMITE = os.getenv("TARGET_TRAMITE", "Asistencia telefónica para la homologación y equivalencia de títulos universitarios extranjeros")
+TARGET_TRAMITE = os.getenv("TARGET_TRAMITE", "")
 HEADLESS = os.getenv("HEADLESS", "false").lower() == "true"
 SLOW_MO_MS = int(os.getenv("SLOW_MO_MS", "120"))
-MAX_MONTHS_TO_SCAN = int(os.getenv("MAX_MONTHS_TO_SCAN", "2"))  # current + next by default
+MAX_MONTHS_TO_SCAN = int(os.getenv("MAX_MONTHS_TO_SCAN", "2"))  # current + next
 DEFAULT_TIMEOUT_MS = int(os.getenv("DEFAULT_TIMEOUT_MS", "20000"))
-BREAK_AT = os.getenv("BREAK_AT", "")  # e.g.: "after_step1,after_step2"
 RECORD_VIDEO = os.getenv("RECORD_VIDEO", "true").lower() == "true"
 
 CONTACT = {
-    # Core
-    "name":           os.getenv("CONTACT_NAME",          "Monica"),
-    "lastname":       os.getenv("CONTACT_LASTNAME",      "Pérez Villarroel"),
-    "id":             os.getenv("CONTACT_ID",            "Z0428685Q"),
-    "email":          os.getenv("CONTACT_EMAIL",         "monicaperezvillarroel060@gmail.com"),
-    "email_confirm":  os.getenv("CONTACT_EMAIL_CONFIRM", "monicaperezvillarroel060@gmail.com"),
-    "phone_cc":       os.getenv("CONTACT_PHONE_CC",      "+34"),
-    "phone":          os.getenv("CONTACT_PHONE",         "613304514"),
-    "phone_confirm":  os.getenv("CONTACT_PHONE_CONFIRM", "613304514"),
-    "notes":          os.getenv("CONTACT_NOTES",         "información de expediente 2022-06976"),
+    "name":           os.getenv("CONTACT_NAME",          ""),
+    "lastname":       os.getenv("CONTACT_LASTNAME",      ""),
+    "id":             os.getenv("CONTACT_ID",            ""),
+    "email":          os.getenv("CONTACT_EMAIL",         ""),
+    "email_confirm":  os.getenv("CONTACT_EMAIL_CONFIRM", ""),
+    "phone_cc":       os.getenv("CONTACT_PHONE_CC",      ""),
+    "phone":          os.getenv("CONTACT_PHONE",         ""),
+    "phone_confirm":  os.getenv("CONTACT_PHONE_CONFIRM", ""),
+    "notes":          os.getenv("CONTACT_NOTES",         ""),
     "consent":        os.getenv("CONTACT_CONSENT",       "true").lower() == "true",
 }
 
-# ==========
+# ==============
 # Utilities
-# ==========
-def _rx_contains(text_fragment: str):
-    frag = re.sub(r"\s+", r"\\s+", text_fragment.strip())
-    return re.compile(frag, re.IGNORECASE)
+# ==============
+def validate_config():
+    errs = []
+    if not TARGET_TRAMITE.strip():
+        errs.append("TARGET_TRAMITE must be set.")
+    for k in ("name", "lastname", "id", "email", "email_confirm", "phone", "phone_confirm"):
+        if not CONTACT.get(k):
+            errs.append(f"CONTACT_{k.upper()} must be set.")
+    if CONTACT.get("email") != CONTACT.get("email_confirm"):
+        errs.append("Email and email_confirm must match.")
+    if CONTACT.get("phone") != CONTACT.get("phone_confirm"):
+        errs.append("Phone and phone_confirm must match.")
+    if errs:
+        for e in errs: print("Config error:", e, file=sys.stderr)
+        sys.exit(64)
 
-def save_artifacts(page, prefix="debug"):
+def rx_contains(text):  # case-insensitive “contains” regex with whitespace tolerance
+    return re.compile(re.sub(r"\s+", r"\\s+", text.strip()), re.I)
+
+def save(page, name):
     Path("artifacts").mkdir(exist_ok=True)
-    try:
-        page.screenshot(path=f"artifacts/{prefix}.png", full_page=True)
-    except Exception:
-        pass
+    try: page.screenshot(path=f"artifacts/{name}.png", full_page=True)
+    except Exception: pass
 
 def wait_for_app(page, url, timeout_s=90):
-    start = time.time(); last_err = None
-    while time.time() - start < timeout_s:
+    t0 = time.time()
+    while time.time() - t0 < timeout_s:
         try:
             page.goto(url, wait_until="domcontentloaded", timeout=20000)
-            if page.content():
-                return True
-        except Exception as e:
-            last_err = e
-        time.sleep(1)
-    if last_err: print(f"Failed to reach app within {timeout_s}s: {last_err}")
+            if page.content(): return True
+        except Exception: pass
+        time.sleep(0.5)
     return False
 
-# ====================
-# Step 1: Sucursal
-# ====================
-def click_first_sucursal(page):
-    header_rx = re.compile(r"SELECCIONAR\s+(SUCURSAL|CENTRO|OFICINA)", re.I)
-    s1_header = page.locator(".hdr, button").filter(has_text=header_rx).first
-    if s1_header.count():
+def dismiss_cookies(page):
+    for sel in ("#acceptCookies","button:has-text('Aceptar')","button:has-text('ACEPTAR')",
+                "[aria-label*='Aceptar' i]","button:has-text('OK')","button:has-text('De acuerdo')"):
         try:
-            expanded = s1_header.get_attribute("aria-expanded")
-            if expanded is not None and expanded.lower() == "false":
-                s1_header.click()
-        except Exception:
-            pass
+            b = page.locator(sel)
+            if b.count() and b.first.is_visible():
+                try: b.first.click()
+                except Exception:
+                    try: page.evaluate("(el)=>el && el.click && el.click()", b.first)
+                    except Exception: pass
+                break
+        except Exception: pass
 
-    # Try radio buttons
+def _click_like_human(page, handle):
+    try: page.evaluate("(el)=>el && el.scrollIntoView({block:'center'})", handle)
+    except Exception: pass
+    try:
+        handle.click(timeout=2000)
+        return True
+    except Exception:
+        try:
+            page.evaluate("(el)=>el && el.click && el.click()", handle)
+            return True
+        except Exception:
+            try:
+                box = handle.bounding_box()
+                if not box: return False
+                cx, cy = box["x"] + box["width"]/2, box["y"] + box["height"]/2
+                page.mouse.click(cx, cy)
+                return True
+            except Exception:
+                return False
+
+# ==========
+# Step 1
+# ==========
+def click_first_sucursal(page):
+    hdr = page.locator(".hdr, button").filter(has_text=re.compile(r"SELECCIONAR\s+(SUCURSAL|CENTRO|OFICINA)", re.I)).first
+    if hdr.count():
+        try:
+            if (hdr.get_attribute("aria-expanded") or "").lower() == "false":
+                hdr.click()
+        except Exception: pass
+
     radios = page.locator('input[type="radio"][name="sucursal"]')
     if radios.count():
         radios.first.check(); return
 
-    # Fallbacks
-    role_radios = page.get_by_role("radio")
-    if role_radios.count():
-        role_radios.first.check(); return
+    rb = page.get_by_role("radio")
+    if rb.count():
+        rb.first.check(); return
 
-    combo = page.get_by_role("combobox").first
-    if combo.count():
-        combo.click(); page.get_by_role("option").first.click(); return
+    cb = page.get_by_role("combobox").first
+    if cb.count():
+        cb.click(); page.get_by_role("option").first.click(); return
 
-    label = page.locator("label.radio-item, label").first
-    if label.count():
-        try: label.click()
+    lab = page.locator("label.radio-item, label").first
+    if lab.count():
+        try: lab.click()
         except Exception:
-            try: label.locator("input").first.check()
+            try: lab.locator("input").first.check()
             except Exception: pass
         return
 
-    save_artifacts(page, "step1_failed")
-    raise RuntimeError("Could not pick Step 1 (Sucursal/Centro). Saved artifacts/step1_failed.png")
+    save(page, "step1_failed")
+    raise RuntimeError("Step 1 not found")
 
-# ====================
-# Step 2: Trámite
-# ====================
+# ==========
+# Step 2
+# ==========
 def select_tramite(page, tramite_text):
-    target_rx = _rx_contains(tramite_text)
-    step2_rx = re.compile(r"SELECCIONAR\s+TR[ÁA]MITE", re.I)
-
-    def _impl(root):
-        step2 = root.locator("section, div").filter(has_text=step2_rx).first
-        if step2.count():
-            try:
-                expanded = step2.get_attribute("aria-expanded")
-                if expanded is not None and expanded.lower() == "false":
-                    hdr = step2.locator(".hdr, button, [role='button']").first
-                    if hdr.count(): hdr.click()
-            except Exception: pass
-
-        # Common pattern on Qmatic pages
-        radio_label = root.locator("label.radio-item, label").filter(has_text=target_rx).first
-        if radio_label.count():
-            try: radio_label.click()
-            except Exception: radio_label.locator("input[type=radio]").first.check()
-            return True
-
-        combo = root.get_by_role("combobox").first
-        if not combo.count():
-            combo = root.get_by_role("button").filter(has_text=re.compile("Seleccionar\\s+Tr[áa]mite|Tr[áa]mite", re.I)).first
-        if combo.count():
-            combo.click()
-            opt = root.get_by_role("option", name=target_rx).first
-            if not opt.count():
-                opt = root.locator(
-                    "[role='listbox'] [role='option'], "
-                    ".mat-select-panel .mat-option-text, "
-                    ".cdk-overlay-pane .mat-option-text, "
-                    ".cdk-overlay-pane [role='option']"
-                ).filter(has_text=target_rx).first
-            if opt.count():
-                opt.click(); return True
-
-        li = root.locator("li, .mat-option, [role='option']").filter(has_text=target_rx).first
-        if li.count(): li.click(); return True
-        return False
-
-    if _impl(page): return
-    for frame in page.frames:
+    step2 = page.locator("section, div").filter(has_text=re.compile(r"SELECCIONAR\s+TR[ÁA]MITE", re.I)).first
+    if step2.count():
         try:
-            url = (frame.url or "").lower()
-            if "qmatic" in url or "booking" in url:
-                if _impl(frame): return
-        except Exception: continue
-
-    save_artifacts(page, "select_tramite_failed")
-    raise RuntimeError("Could not select the trámite — artifacts/select_tramite_failed.png")
-
-# ===========================
-# Step 3: Calendar & slots
-# ===========================
-def _month_label_text(root):
-    lbl = root.locator(".monthnav > div").first
-    return (lbl.inner_text().strip() if lbl.count() else "")
-
-def _goto_next_month(root):
-    before = _month_label_text(root)
-    next_btn = root.locator('.monthnav .btn', has_text='›').first
-    if not next_btn.count() or not next_btn.is_enabled():
-        next_btn = root.get_by_role("button", name=re.compile(r"Siguiente|›", re.I)).first
-        if not next_btn.count() or not next_btn.is_enabled():
-            return False
-    next_btn.click()
-    t0 = time.time()
-    while time.time() - t0 < 3.0:
-        after = _month_label_text(root)
-        if after and after != before:
-            return True
-        time.sleep(0.05)
-    return True
-
-def _wait_for_slots_or_empty(root, timeout_s=4.0):
-    t0 = time.time()
-    while time.time() - t0 < timeout_s:
-        if root.locator(".slots .slotbtn, .slotbtn, [data-time], .slots [role='button']").count() > 0:
-            return True
-        if root.locator(".emptybox, .muted, .no-slots, text=/No hay.*disponible/i").count() > 0:
-            return False
-        time.sleep(0.05)
-    return False
-
-def _pick_first_slot(root):
-    slot = root.locator('.slotbtn').first
-    if not slot.count():
-        slot = root.locator('[data-time], .slots [role="button"]').first
-    if not slot.count():
-        return False
-    expect(slot).to_be_visible()
-    slot.click()
-    return True
-
-def find_and_pick_earliest_slot(page):
-    # Ensure Step 3 panel is open
-    s3_header = page.locator(".hdr, button").filter(has_text=re.compile("SELECCIONAR\\s+FECHA|FECHA Y HORA", re.I)).first
-    if s3_header.count():
-        try:
-            expanded = s3_header.get_attribute("aria-expanded")
-            if expanded is not None and expanded.lower() == "false":
-                s3_header.click()
+            if (step2.get_attribute("aria-expanded") or "").lower() == "false":
+                step2.locator(".hdr, button, [role='button']").first.click()
         except Exception: pass
 
-    root = page  # calendar lives in main doc on the target
-    for _ in range(MAX_MONTHS_TO_SCAN):
-        # Enabled days in view
-        day_buttons = root.locator('.daysgrid .day:not([disabled])')
-        if day_buttons.count() == 0:
-            if not _goto_next_month(root):
-                break
-            continue
+    tgt = rx_contains(tramite_text)
 
-        for i in range(day_buttons.count()):
-            btn = day_buttons.nth(i)
-            try:
-                btn.click()
-            except Exception:
-                continue
+    lab = page.locator("label.radio-item, label").filter(has_text=tgt).first
+    if lab.count():
+        try: lab.click()
+        except Exception:
+            lab.locator("input[type=radio]").first.check()
+        return
 
-            if not _wait_for_slots_or_empty(root):
-                continue
+    combo = page.get_by_role("combobox").first
+    if not combo.count():
+        combo = page.get_by_role("button").filter(has_text=re.compile("Seleccionar\\s+Tr[áa]mite|Tr[áa]mite", re.I)).first
+    if combo.count():
+        combo.click()
+        opt = page.get_by_role("option", name=tgt).first
+        if not opt.count():
+            opt = page.locator("[role='listbox'] [role='option'], .mat-option-text").filter(has_text=tgt).first
+        if opt.count():
+            opt.click(); return
 
-            if _pick_first_slot(root):
-                return True
+    li = page.locator("li, .mat-option, [role='option']").filter(has_text=tgt).first
+    if li.count():
+        li.click(); return
 
-        if not _goto_next_month(root):
-            break
+    save(page, "select_tramite_failed")
+    raise RuntimeError("Step 2 (trámite) not found")
 
-    return False
+# ==========
+# Step 3 (date & hour)
+# ==========
+TIME_RX = re.compile(r"\b([01]?\d|2[0-3]):[0-5]\d\b")
+def _parse_time_to_minutes(text):
+    m = TIME_RX.search(text or "")
+    if not m: return None
+    hh, mm = m.group(0).split(":")
+    try: return int(hh) * 60 + int(mm)
+    except Exception: return None
 
-# ====================================
-# Step 4: Fill contact + confirm
-# ====================================
-def fill_by_label_or_placeholder(page, label_rx, value):
-    if value is None or value == "": return False
-    # Try "get_by_label" first (robust with aria/for associations)
-    ctl = page.get_by_label(label_rx, exact=False)
-    if ctl.count():
-        try: ctl.first.fill(value); return True
-        except Exception: pass
-    # Try placeholder fallback
-    ph = page.locator(f'input[placeholder*="{value[:4]}" i], textarea[placeholder*="{value[:4]}" i]').first
-    if ph.count():
-        try: ph.fill(value); return True
-        except Exception: pass
-    return False
-
-# ==========================================
-# Step 4.5: Click final "Aceptar / Coger cita"
-# ==========================================
-def _is_enabled(loc):
-    try:
-        if not loc.count(): return False
-        if loc.first.is_visible() and loc.first.is_enabled():
-            # Consider attributes that sometimes gate clicks
-            disabled_attr = loc.first.get_attribute("disabled")
-            aria_disabled = (loc.first.get_attribute("aria-disabled") or "").lower()
-            if disabled_attr is not None and disabled_attr not in ("", "false"):
-                return False
-            if aria_disabled in ("true", "1"):
-                return False
-            return True
-    except Exception:
-        pass
-    return False
-
-def click_finish_button(page, timeout_ms=10000):
-    """
-    Clicks the final button to complete the booking. Handles variants:
-    'Aceptar', 'ACEPTAR', 'Coger cita', 'Reservar', 'Finalizar', 'Confirmar', etc.
-    Also searches inside iframes just in case.
-    """
-    labels_rx = re.compile(
-        r"(?:^|\b)(Aceptar|ACEPTAR|Coger\s+cita|CREAR\s+CITA|Reservar(?:\s+cita)?|Finalizar|Confirmar)(?:\b|$)",
-        re.I
+def _visible_slots(root):
+    return root.locator(
+        ".slots .slotbtn, .slotbtn, [data-time], [data-slot], "
+        ".time-slot button, .times button, "
+        ".mat-chip, .mat-mdc-chip, .chip, .hour, "
+        "button, a, [role='button']"
     )
 
-    def _find_and_click(root):
-        # 1) Role=button by accessible name
-        btn = root.get_by_role("button", name=labels_rx).first
-        if not _is_enabled(btn):
-            # 2) Visible text match on <button> or <a role=button>
-            btn = root.locator("button, [role='button']").filter(has_text=labels_rx).first
-
-        if not _is_enabled(btn):
-            # 3) Submit inputs (by text or any submit if only one)
-            cand = root.locator("input[type=submit], button[type=submit]").filter(has_text=labels_rx).first
-            btn = cand if cand.count() else root.locator("input[type=submit], button[type=submit]").first
-
-        if not btn.count():
-            return False
-
-        try:
-            expect(btn).to_be_visible(timeout=timeout_ms)
-        except Exception:
-            try: btn.scroll_into_view_if_needed()
-            except Exception: pass
-
-        # Wait briefly for dynamic enablement
-        t0 = time.time()
-        while time.time() - t0 < timeout_ms / 1000.0:
-            if _is_enabled(btn):
-                break
-            time.sleep(0.05)
-
-        # Try normal click; fall back to JS click
-        try:
-            btn.click()
-        except Exception:
+def _wait_for_any_slot(root, timeout_s=6):
+    t0 = time.time()
+    while time.time() - t0 < timeout_s:
+        loc = _visible_slots(root)
+        cnt = loc.count()
+        for i in range(min(50, cnt or 0)):
+            b = loc.nth(i)
             try:
-                root.evaluate("(el)=>el.click()", btn)
+                if b.is_visible():
+                    txt = (b.inner_text() or "").strip()
+                    if TIME_RX.search(txt) or b.get_attribute("data-time"):
+                        return True
+            except Exception: pass
+        time.sleep(0.05)
+    return False
+
+def _candidate_days(page):
+    selectors = [
+        ".daysgrid button:not([disabled])",
+        ".daysgrid .day:not([disabled])",
+        ".mat-calendar-body-cell:not(.mat-calendar-body-disabled)",
+        "button.mat-calendar-body-cell:not([disabled])",
+        ".mat-mdc-calendar-body .mat-calendar-body-cell:not(.mat-calendar-body-disabled)",
+        "td[role='gridcell'] button:not([disabled])",
+    ]
+    seen = set(); locs = []
+    for sel in selectors:
+        qs = page.locator(sel)
+        c = qs.count()
+        for i in range(min(c, 60)):
+            el = qs.nth(i)
+            try:
+                if not el.is_visible(): continue
+                box = el.bounding_box()
+                if not box: continue
+                key = (round(box["x"],1), round(box["y"],1), round(box["width"],1), round(box["height"],1))
+                if key in seen: continue
+                seen.add(key); locs.append(el)
+            except Exception: continue
+    return locs
+
+def _collect_time_elements(page):
+    nets = [
+        "button, a, [role='button'], .slotbtn, .mat-chip, .mat-mdc-chip, .chip, .hour, [data-time], [data-slot], .times *, .time-slot *",
+        "*",
+    ]
+    seen=set(); out=[]
+    for net in nets:
+        for el in page.query_selector_all(net):
+            try:
+                txt = (el.inner_text() or "").strip()
+                if not txt: continue
+                m = TIME_RX.search(txt)
+                if not m: continue
+                mins = _parse_time_to_minutes(txt)
+                if mins is None: continue
+                if not el.is_visible(): continue
+                clickable = el
+                for _ in range(3):
+                    tag = (clickable.evaluate("n=>n.tagName") or "").lower()
+                    role = clickable.get_attribute("role") or ""
+                    tabindex = clickable.get_attribute("tabindex")
+                    if tag in ("button","a") or role=="button" or (tabindex and int(tabindex)>=0) or clickable.get_attribute("onclick") is not None:
+                        break
+                    parent = clickable.evaluate_handle("n=>n.parentElement")
+                    if not parent: break
+                    clickable = parent
+                box = el.bounding_box()
+                if not box: continue
+                key = (mins, round(box["x"],1), round(box["y"],1))
+                if key in seen: continue
+                seen.add(key)
+                out.append({"el": el, "clickable": clickable, "minutes": mins})
+            except Exception: continue
+        if out: break
+    out.sort(key=lambda d: d["minutes"])
+    return out
+
+def find_and_pick_earliest_slot(page):
+    # If hours already visible, click earliest
+    if _wait_for_any_slot(page, timeout_s=2.0):
+        time_candidates = _collect_time_elements(page)
+        if time_candidates and _click_like_human(page, time_candidates[0]["clickable"]):
+            save(page, "after_click_hour_preselected_day")
+            return True
+
+    # Otherwise scan days (as before)
+    for month in range(MAX_MONTHS_TO_SCAN):
+        try: page.wait_for_selector(".daysgrid, .mat-calendar, .mat-mdc-calendar-body, [role='grid']", timeout=8000)
+        except Exception: pass
+
+        days = _candidate_days(page)
+        if not days:
+            if not _goto_next_month(page): break
+            continue
+
+        for i, d in enumerate(days[:62]):
+            try:
+                if not d.is_visible(): d.scroll_into_view_if_needed()
+                d.click()
             except Exception:
-                return False
+                continue
 
-        return True
+            save(page, f"after_click_day_{month}_{i}")
 
-    # Try main page first
-    if _find_and_click(page):
-        return True
+            if not _wait_for_any_slot(page, timeout_s=7):
+                continue
 
-    # Try frames next
-    for fr in page.frames:
+            time_candidates = _collect_time_elements(page)
+            for cand in time_candidates[:15]:
+                if _click_like_human(page, cand["clickable"]):
+                    save(page, f"after_click_hour_{month}_{i}_{cand['minutes']}")
+                    return True
+
+        if not _goto_next_month(page): break
+
+    return False
+
+def _goto_next_month(root):
+    for sel in (".monthnav .btn:has-text('›')",
+                ".monthnav button:has-text('›')",
+                "button[aria-label*='Siguiente' i]",
+                "button:has-text('Siguiente')",
+                "button:has-text('›')",
+                "button[aria-label*='Next' i]"):
+        b = root.locator(sel).first
+        if b.count():
+            try:
+                if b.is_enabled():
+                    b.click(); return True
+            except Exception: continue
+    return False
+
+# ==========
+# Step 4 (consent + submit) — ROBUST
+# ==========
+CONSENT_RXS = [
+    re.compile(r"Estoy\s+informado/?a\s+sobre\s+el\s+tratamiento\s+de\s+mis\s+datos\s+personales", re.I),
+    re.compile(r"tratamiento.*datos.*personales", re.I),
+    re.compile(r"he\s+le[ií]do.*protecci[oó]n\s+de\s+datos", re.I),
+    re.compile(r"consiento.*datos", re.I),
+]
+
+def _is_checked(node):
+    try:
+        return node.evaluate("""
+        (el) => {
+          const input = el.matches('input[type="checkbox"]') ? el
+                        : el.querySelector('input[type="checkbox"], .mdc-checkbox__native-control');
+          if (input) return !!input.checked;
+
+          const aria = (el.getAttribute('aria-checked') || '').toLowerCase();
+          const cls  = el.getAttribute('class') || '';
+          if (aria === 'true') return true;
+          if (/(^|\\s)mat-checkbox-checked(\\s|$)/.test(cls)) return true;
+          if (/(^|\\s)mdc-checkbox--selected(\\s|$)/.test(cls)) return true;
+          if (/(^|\\s)mdc-checkbox--checked(\\s|$)/.test(cls)) return true;
+          return false;
+        }
+        """)
+    except Exception:
+        return False
+
+def _dump_checkboxes(page):
+    Path("artifacts").mkdir(exist_ok=True)
+    lines = []
+    try:
+        cbs = page.locator("input[type='checkbox']:visible, .mat-mdc-checkbox:visible, [role='checkbox']:visible")
+        n = cbs.count()
+        lines.append(f"Found {n} visible checkbox-like nodes")
+        for i in range(min(n, 25)):
+            el = cbs.nth(i)
+            try:
+                txt = (el.inner_text() or "").strip()
+            except Exception:
+                txt = ""
+            try:
+                aria = el.get_attribute("aria-label") or ""
+                ident = (el.get_attribute("id") or "") + " " + (el.get_attribute("class") or "")
+                near = el.evaluate("""(e)=>{
+                    const lab = e.closest('label') || e.parentElement;
+                    const t = (lab && lab.innerText)||'';
+                    return t && t.trim().slice(0,160);
+                }""") or ""
+                checked = "✓" if _is_checked(el) else "·"
+                lines.append(f"[{i}] checked={checked} id/class={ident.strip()} aria-label={aria!r} nodeText={txt[:80]!r} nearText={near!r}")
+            except Exception:
+                continue
+    except Exception as e:
+        lines.append(f"error during dump: {e!r}")
+    try:
+        with open("artifacts/consent_debug.txt","w", encoding="utf-8") as f:
+            f.write("\n".join(lines))
+        print("\n".join(lines))
+    except Exception:
+        pass
+
+def _focus_and_space(page, el):
+    try: el.scroll_into_view_if_needed()
+    except Exception: pass
+    try: el.focus()
+    except Exception: pass
+    try:
+        page.keyboard.press("Space")
+        page.wait_for_timeout(120)
+    except Exception: pass
+
+def check_consent_by_text(page):
+    save(page, "before_consent_attempt")
+    _dump_checkboxes(page)
+
+    # 1) label[for]
+    try:
+        lab = page.locator("label").filter(has_text=re.compile(r"informad[o/a].*tratamiento.*datos", re.I)).first
+        if lab.count():
+            cb_id = lab.get_attribute("for")
+            if cb_id:
+                input_el = page.locator(f"#{cb_id}")
+                if input_el.count():
+                    _focus_and_space(page, input_el.first)
+                    if _is_checked(input_el.first):
+                        save(page, "after_consent_label_for_space"); return True
+                    try: input_el.first.click()
+                    except Exception: pass
+                    if _is_checked(input_el.first):
+                        save(page, "after_consent_label_for_click"); return True
+                    page.evaluate("""
+                    (input) => {
+                      const fire = (t)=> input.dispatchEvent(new Event(t,{bubbles:true,cancelable:true}));
+                      if (!input.checked) input.checked = true;
+                      input.setAttribute('aria-checked','true');
+                      fire('input'); fire('change');
+                      input.dispatchEvent(new MouseEvent('click',{bubbles:true,cancelable:true,composed:true}));
+                      const wrap = input.closest('.mat-checkbox, .mat-mdc-checkbox');
+                      if (wrap) { wrap.classList.add('mat-checkbox-checked','mdc-checkbox--selected','mdc-checkbox--checked'); wrap.setAttribute('aria-checked','true'); }
+                    }
+                    """, input_el.first)
+                    page.wait_for_timeout(150)
+                    if _is_checked(input_el.first):
+                        save(page, "after_consent_label_for_forced"); return True
+    except Exception:
+        pass
+
+    # 2) role=checkbox
+    try:
+        acc = page.get_by_role("checkbox", name=re.compile(r"informad[o/a].*tratamiento.*datos", re.I))
+        if acc.count():
+            _focus_and_space(page, acc.first)
+            if _is_checked(acc.first):
+                save(page, "after_consent_role_space"); return True
+            try: acc.first.click(timeout=1500)
+            except Exception: pass
+            if _is_checked(acc.first):
+                save(page, "after_consent_role_click"); return True
+    except Exception:
+        pass
+
+    # 3) by nearby container
+    container = None
+    for rx in CONSENT_RXS:
         try:
-            if _find_and_click(fr):
-                return True
+            block = page.locator("*").filter(has_text=rx).first
+            if block.count(): container = block; break
         except Exception:
             continue
 
-    # Very broad last chance
-    try:
-        any_btn = page.locator("button, [role='button'], input[type=submit]").filter(has_text=labels_rx).first
-        if _is_enabled(any_btn):
-            any_btn.click(); return True
-    except Exception:
-        pass
-
-    save_artifacts(page, "finish_button_not_found")
-    return False
-
-def fill_contact_and_confirm(page, contact):
-    def _fill(selector, value):
-        if value is None or value == "": return False
-        loc = page.locator(selector)
-        if loc.count():
-            loc.first.fill(value); return True
-        return False
-
-    # Known IDs used by our mock as a fast path (won't hurt on real page—locators just won't exist)
-    _fill("#input_name",            contact["name"])
-    _fill("#input_lastname",        contact["lastname"])
-    _fill("#input_id",              contact["id"])
-    _fill("#input_email",           contact["email"])
-    _fill("#input_email_confirm",   contact.get("email_confirm") or contact["email"])
-    _fill("#input_phone_cc",        contact["phone_cc"])
-    _fill("#input_phone",           contact["phone"])
-    _fill("#input_phone_confirm",   contact.get("phone_confirm") or contact["phone"])
-    _fill("#input_notes",           contact.get("notes", ""))
-
-    # Real page — fill by visible labels (case-insensitive, accents tolerated)
-    fill_by_label_or_placeholder(page, re.compile(r"^Nombre\b", re.I),                          contact["name"])
-    fill_by_label_or_placeholder(page, re.compile(r"^Apellido", re.I),                          contact["lastname"])
-    fill_by_label_or_placeholder(page, re.compile(r"(DNI|NIE|Pasaporte)", re.I),                contact["id"])
-    fill_by_label_or_placeholder(page, re.compile(r"Direcci[oó]n.*correo.*electr[oó]nico", re.I), contact["email"])
-    fill_by_label_or_placeholder(page, re.compile(r"Confirmar.*correo", re.I),                  contact.get("email_confirm") or contact["email"])
-    fill_by_label_or_placeholder(page, re.compile(r"C[oó]digo.*pa[ií]s", re.I),                 contact["phone_cc"])
-    fill_by_label_or_placeholder(page, re.compile(r"N[uú]mero.*tel[eé]fono.*m[oó]vil", re.I),   contact["phone"])
-    fill_by_label_or_placeholder(page, re.compile(r"Confirmar.*(m[oó]vil|tel[eé]fono)", re.I),  contact.get("phone_confirm") or contact["phone"])
-    # Notes may be a textarea
-    try:
-        ta = page.get_by_label(re.compile(r"Notas", re.I))
-        if ta.count(): ta.first.fill(contact.get("notes", ""))
-    except Exception:
-        pass
-
-    # Consent checkbox
-    if contact.get("consent", False):
-        consent = page.get_by_label(re.compile(r"tratamiento.*datos.*personales|consiento|he le[ií]do", re.I))
-        if consent.count():
-            try: consent.first.check()
+    candidates = []
+    if container and container.count():
+        try: container.scroll_into_view_if_needed()
+        except Exception: pass
+        for sel in [
+            "input[type='checkbox']",
+            ".mdc-checkbox__native-control",
+            ".mat-mdc-checkbox input[type='checkbox']",
+            ".mat-checkbox input[type='checkbox']",
+            ".mat-mdc-checkbox",
+            ".mat-checkbox",
+            "[role='checkbox']",
+        ]:
+            try:
+                loc = container.locator(sel)
+                if loc.count(): candidates.append(loc.first)
             except Exception:
-                try: consent.first.click()
-                except Exception: pass
-        else:
-            # Try id used in mock
-            try: page.locator("#input_consent").check()
+                pass
+        if not candidates:
+            try:
+                up = container.locator("xpath=ancestor-or-self::*[position()<=4]")
+                for j in range(min(4, up.count())):
+                    anc = up.nth(j)
+                    loc = anc.locator("input[type='checkbox'], .mdc-checkbox__native-control, .mat-mdc-checkbox, .mat-checkbox, [role='checkbox']")
+                    if loc.count(): candidates.append(loc.first); break
             except Exception: pass
 
-    # Generic confirm/continue if present
-    confirm_rx = re.compile(r"Confirmar|Continuar|Siguiente|Finalizar|Reservar", re.I)
-    confirm_btn = page.locator(".btn.primary", has_text=confirm_rx).first
-    if not confirm_btn.count():
-        confirm_btn = page.get_by_role("button", name=confirm_rx).first
-    if confirm_btn.count():
+    if not candidates:
         try:
-            expect(confirm_btn).to_be_visible()
-            confirm_btn.click()
-            time.sleep(1.0)
-        except Exception:
-            pass  # We'll rely on the explicit finish click below
-
-    # NEW: explicit finish for 'Aceptar' / 'Coger cita' (or if generic was absent/ineffective)
-    if not click_finish_button(page):
-        # One more attempt with very specific selectors commonly seen on the site
-        try:
-            b = page.locator("#btnAceptar, button:has-text('ACEPTAR'), button:has-text('Aceptar'), button:has-text('Coger cita')")
-            if b.count():
-                b.first.click()
-            else:
-                raise RuntimeError("No final button to click")
-        except Exception:
-            save_artifacts(page, "final_click_failed")
-            raise RuntimeError("Could not find/click the final 'Aceptar / Coger cita' button — see artifacts/final_click_failed.png")
-
-    time.sleep(2)
-    save_artifacts(page, "after_confirm")
-
-# ==========
-# Main flow
-# ==========
-def run(playwright: Playwright):
-    browser = playwright.chromium.launch(headless=HEADLESS, slow_mo=SLOW_MO_MS)
-    context_kwargs = {}
-    if RECORD_VIDEO:
-        Path("videos").mkdir(exist_ok=True)
-        context_kwargs["record_video_dir"] = "videos"
-    context = browser.new_context(**context_kwargs)
-
-    # Console & network logs
-    def on_console(msg): print("[console]", msg.type, msg.text)
-    def on_request(req): print(">>", req.method, req.url)
-    def on_response(res): print("<<", res.status, res.url)
-    context.on("request", on_request)
-    context.on("response", on_response)
-
-    context.tracing.start(screenshots=True, snapshots=True, sources=True)
-    page = context.new_page()
-    page.on("console", on_console)
-    page.set_default_timeout(DEFAULT_TIMEOUT_MS)
-
-    print(f"Opening {BASE_URL} ...")
-    if not wait_for_app(page, BASE_URL, timeout_s=90):
-        save_artifacts(page, "cannot_load_app")
-        context.tracing.stop(path="artifacts/trace.zip")
-        context.close(); browser.close()
-        sys.exit(1)
-
-    # Cookie banner best-effort
-    for sel in ("#acceptCookies", "text=Aceptar", "button:has-text('Aceptar')", "button:has-text('ACEPTAR')"):
-        try:
-            btn = page.locator(sel)
-            if btn.count():
-                btn.first.click(); break
+            vis = page.locator("input[type='checkbox']:visible, .mdc-checkbox__native-control:visible")
+            if vis.count() == 1: candidates.append(vis.first)
         except Exception: pass
 
-    # Step 1
-    click_first_sucursal(page)
-    if "after_step1" in BREAK_AT: page.pause()
-    save_artifacts(page, "after_step1")
+    for cand in candidates:
+        try:
+            _focus_and_space(page, cand)
+            if _is_checked(cand):
+                save(page, "after_consent_space_container"); return True
+            try: cand.click(timeout=1200)
+            except Exception: pass
+            if _is_checked(cand):
+                save(page, "after_consent_click_container"); return True
+            page.evaluate("""
+            (el) => {
+              const input = el.matches('input') ? el : el.querySelector('input[type="checkbox"], .mdc-checkbox__native-control');
+              const tgt = input || el;
+              const fire = (t)=> tgt.dispatchEvent(new Event(t,{bubbles:true,cancelable:true}));
+              const click = ()=> tgt.dispatchEvent(new MouseEvent('click',{bubbles:true,cancelable:true,composed:true}));
+              if (input && !input.checked) input.checked = true;
+              if (!tgt.getAttribute('aria-checked')) tgt.setAttribute('aria-checked','true');
+              fire('input'); fire('change'); click();
+              const wrap = tgt.closest('.mat-checkbox, .mat-mdc-checkbox');
+              if (wrap) { wrap.classList.add('mat-checkbox-checked','mdc-checkbox--selected','mdc-checkbox--checked'); wrap.setAttribute('aria-checked','true'); }
+            }
+            """, cand)
+            page.wait_for_timeout(150)
+            if _is_checked(cand):
+                save(page, "after_consent_forced_container"); return True
+        except Exception:
+            continue
 
-    # Step 2
-    select_tramite(page, TARGET_TRAMITE)
-    if "after_step2" in BREAK_AT: page.pause()
-    save_artifacts(page, "after_step2")
+    save(page, "consent_click_failed")
+    return False
 
-    # Step 3
-    print("Searching for the earliest available day & time (current + next month) ...")
-    has_slot = find_and_pick_earliest_slot(page)
-    save_artifacts(page, "after_step3_calendar")
-    if "after_step3" in BREAK_AT: page.pause()
-    if not has_slot:
-        print("No hay citas disponibles (no slots found).")
-        save_artifacts(page, "no_slots_found")
-        context.tracing.stop(path="artifacts/trace.zip")
+# ---------- dialog + submit helpers ----------
+def _try_click(page, locator, name_for_log, timeout=1500, force=False):
+    try:
+        if locator and locator.count():
+            el = locator.first
+            try: el.scroll_into_view_if_needed()
+            except Exception: pass
+            try:
+                el.click(timeout=timeout, force=force)
+                return True
+            except Exception:
+                try:
+                    page.evaluate("(el)=>el && el.click && el.click()", el)
+                    return True
+                except Exception:
+                    try:
+                        box = el.bounding_box()
+                        if box:
+                            page.mouse.click(box["x"] + box["width"]/2, box["y"] + box["height"]/2)
+                            return True
+                    except Exception:
+                        pass
+    except Exception:
+        pass
+    return False
+
+def _click_topmost_confirm_button(page, labels=("CONFIRMAR","ACEPTAR","Aceptar")):
+    """
+    Find ALL visible confirm-like buttons anywhere, pick the one with highest z-index,
+    and click it (robustly). Logs candidates to artifacts/confirm_candidates.txt
+    """
+    Path("artifacts").mkdir(exist_ok=True)
+    try:
+        candidates = page.evaluate(f"""
+        (labels) => {{
+          function visible(el){{
+            const r = el.getBoundingClientRect();
+            const cs = getComputedStyle(el);
+            return !!(r.width && r.height) && cs.visibility!=='hidden' && cs.display!=='none';
+          }}
+          function z(el){{
+            let zi = 0, n = el;
+            while(n){{
+              const z = parseInt(getComputedStyle(n).zIndex || '0', 10);
+              if(!isNaN(z)) zi = Math.max(zi, z);
+              n = n.parentElement;
+            }}
+            return zi;
+          }}
+          const qs = Array.from(document.querySelectorAll('button,[role=\"button\"],a[role=\"button\"],.mdc-button,.mat-button,.mat-raised-button'));
+          const labs = labels.map(l=>l.toUpperCase());
+          const out = [];
+          for(const el of qs){{
+            const t = (el.innerText||el.textContent||'').trim().toUpperCase();
+            if(!t) continue;
+            if(!labs.some(l=>t.includes(l))) continue;
+            if(!visible(el)) continue;
+            const r = el.getBoundingClientRect();
+            out.push({{
+              text: t, z: z(el), x: r.x, y: r.y, w: r.width, h: r.height,
+              xpath: (function g(n){{if(!n||!n.parentElement) return '/'+n.tagName; return g(n.parentElement)+'/'+n.tagName+'['+(1+[...n.parentElement.children].indexOf(n))+']';}})(el)
+            }});
+          }}
+          out.sort((a,b)=> b.z - a.z || a.y - b.y); // highest z, then top-most
+          return out;
+        }}
+        """, list(labels))
+
+        with open("artifacts/confirm_candidates.txt","w",encoding="utf-8") as f:
+            for i,c in enumerate(candidates[:20]):
+                f.write(f"[{i}] z={c['z']} y={round(c['y'],1)} text={c['text']}\n")
+
+        if not candidates:
+            return False
+
+        # Try the best one
+        top = candidates[0]
+        # Try clicking by screen coords (most reliable for overlays)
+        page.mouse.click(top["x"] + top["w"]/2, top["y"] + top["h"]/2)
+        page.wait_for_timeout(300)
+
+        # If something still blocks, try a DOM-based click using a fresh locator search
+        rx = re.compile(r"(CONFIRMAR|ACEPTAR)", re.I)
+        loc = page.locator("button, [role='button'], a[role='button'], .mdc-button, .mat-button").filter(has_text=rx).first
+        _try_click(page, loc, "confirm_dom_click", timeout=1500, force=True)
+        page.wait_for_timeout(300)
+        return True
+    except Exception:
+        return False
+
+def _handle_data_change_dialog(page, max_rounds=6):
+    """
+    Generic handler: try common dialog containers, but also fall back to 'click topmost CONFIRMAR'.
+    """
+    rx_dialog = re.compile(r"(Confirmaci[oó]n\s+cambio\s+de\s+datos|Los\s+siguientes\s+datos\s+han\s+cambiado)", re.I)
+    rx_confirm = re.compile(r"(CONFIRMAR|ACEPTAR)", re.I)
+
+    # small wait for overlay to mount
+    page.wait_for_timeout(250)
+
+    for r in range(max_rounds):
+        save(page, f"dialog_pass_{r}")
+
+        # 0) Make sure backdrop won't intercept pointer events
+        try:
+            page.evaluate("""() => {
+              document.querySelectorAll('.cdk-overlay-backdrop, .modal-backdrop')
+                .forEach(b => b.style.pointerEvents = 'none');
+            }""")
+        except Exception:
+            pass
+
+        # 1) Known dialog containers
+        dialog = page.locator(
+            ".cdk-overlay-container .cdk-overlay-pane [role='dialog'], "
+            ".cdk-overlay-container .cdk-overlay-pane, "
+            ".mat-dialog-container, .mdc-dialog__surface, .modal-dialog, [role='dialog']"
+        ).filter(has_text=rx_dialog).first
+
+        if dialog.count() and dialog.is_visible():
+            # try confirm inside
+            btn = dialog.get_by_role("button", name=rx_confirm).first
+            if not btn.count():
+                btn = dialog.locator("button, [role='button'], .mdc-button, .mat-button").filter(has_text=rx_confirm).first
+            if _try_click(page, btn, "dialog_confirm", timeout=1800) or _try_click(page, btn, "dialog_confirm_force", timeout=1800, force=True):
+                page.wait_for_timeout(350)
+                if not dialog.is_visible(): return True
+
+        # 2) If that failed (or dialog not matched), click topmost confirm-like button anywhere
+        if _click_topmost_confirm_button(page):
+            page.wait_for_timeout(400)
+            # if any dialog disappeared, consider it done
+            any_dialog = page.locator("[role='dialog'], .mat-dialog-container, .mdc-dialog__surface, .modal-dialog")
+            if not any_dialog.count() or not any_dialog.first.is_visible():
+                return True
+
+        # 3) Keyboard fallback (focus last overlay pane and press Enter)
+        try:
+            overlay = page.locator(".cdk-overlay-container .cdk-overlay-pane:visible").last
+            if overlay.count():
+                overlay.focus()
+                page.keyboard.press("Enter")
+                page.wait_for_timeout(300)
+                if not overlay.is_visible():
+                    return True
+        except Exception:
+            pass
+
+        page.wait_for_timeout(250)
+
+    save(page, "dialog_confirm_failed")
+    return False
+
+def _wait_for_booking_result(page, timeout_s=15):
+    success_rx = re.compile(
+        r"(reserva\s+confirmada|cita\s+confirmada|hemos\s+enviado\s+una\s+confirmaci[oó]n|reserva\s+realizada)",
+        re.I,
+    )
+    error_sel = ".mat-error, [role='alert'], [aria-live='polite'], .error, .mat-snack-bar-container"
+
+    t0 = time.time()
+    while time.time() - t0 < timeout_s:
+        try:
+            body_text = (page.inner_text("body") or "").strip()
+            if success_rx.search(body_text):
+                save(page, "booking_success")
+                return "success"
+
+            errs = page.locator(error_sel)
+            if errs.count():
+                texts = []
+                for i in range(min(8, errs.count())):
+                    try:
+                        t = (errs.nth(i).inner_text() or "").strip()
+                        if t:
+                            texts.append(t)
+                    except Exception:
+                        pass
+                if texts:
+                    print("Form errors:", "; ".join(texts))
+                    save(page, "booking_error_visible")
+                    return "error"
+        except Exception:
+            pass
+        page.wait_for_timeout(300)
+    save(page, "booking_result_unknown")
+    return "unknown"
+
+def click_finish_button(page):
+    rx = re.compile(r"(CREAR\s+CITA|Reservar(?:\s+cita)?|Finalizar|Confirmar|Aceptar)", re.I)
+    btn = page.get_by_role("button", name=rx).first
+    if not btn.count():
+        btn = page.locator("button, [role='button'], a[role='button']").filter(has_text=rx).first
+
+    if not btn.count():
+        save(page, "submit_button_not_found")
+        return False
+
+    for _ in range(15):
+        try:
+            disabled_attr = btn.get_attribute("disabled")
+            aria_dis = (btn.get_attribute("aria-disabled") or "").lower()
+            cls = (btn.get_attribute("class") or "")
+            pe = btn.evaluate("el => getComputedStyle(el).pointerEvents")
+            if not disabled_attr and aria_dis != "true" and "disabled" not in cls and "mat-button-disabled" not in cls and pe != "none":
+                break
+        except Exception:
+            pass
+        page.wait_for_timeout(120)
+
+    try:
+        btn.scroll_into_view_if_needed()
+    except Exception:
+        pass
+
+    if not _click_like_human(page, btn):
+        try:
+            page.evaluate("(el)=>{el.click && el.click()}", btn)
+        except Exception:
+            save(page, "submit_click_failed")
+            return False
+
+    # Log visible errors (non-fatal)
+    try:
+        errtxt = []
+        for sel in [".mat-error", "[role='alert']", "[aria-live='polite']"]:
+            loc = page.locator(sel)
+            for i in range(min(6, loc.count())):
+                t = (loc.nth(i).inner_text() or "").strip()
+                if t: errtxt.append(t)
+        if errtxt:
+            print("Form errors:", "; ".join(errtxt))
+    except Exception:
+        pass
+
+    return True
+
+# ==========
+# Step 4 flow
+# ==========
+def fill_by_label(page, rx, val):
+    if not val: return
+    loc = page.get_by_label(rx, exact=False)
+    if loc.count():
+        try: loc.first.fill(val)
+        except Exception: pass
+
+def fill_contact_and_confirm(page, c):
+    # Fill fields
+    fill_by_label(page, re.compile(r"^Nombre\b", re.I), c["name"])
+    fill_by_label(page, re.compile(r"^Apellido", re.I), c["lastname"])
+    fill_by_label(page, re.compile(r"(DNI|NIE|Pasaporte)", re.I), c["id"])
+    fill_by_label(page, re.compile(r"Direcci[oó]n.*correo.*electr[oó]nico", re.I), c["email"])
+    fill_by_label(page, re.compile(r"Confirmar.*correo", re.I), c["email_confirm"])
+    fill_by_label(page, re.compile(r"C[oó]digo.*pa[ií]s", re.I), c["phone_cc"])
+    fill_by_label(page, re.compile(r"N[uú]mero.*tel[eé]fono.*m[oó]vil", re.I), c["phone"])
+    fill_by_label(page, re.compile(r"Confirmar.*(m[oó]vil|tel[eé]fono)", re.I), c["phone_confirm"])
+    try:
+        ta = page.get_by_label(re.compile(r"Notas", re.I))
+        if ta.count(): ta.first.fill(c.get("notes",""))
+    except Exception: pass
+
+    # Consent
+    if c.get("consent", False):
+        ok = check_consent_by_text(page)
+        if not ok:
+            print("WARN: Could not check consent; attempting submit anyway.")
+            save(page, "consent_not_checked")
+
+    # Submit
+    page.wait_for_timeout(300)
+    if not click_finish_button(page):
+        return
+    save(page, "after_confirm")
+
+    # Handle generic confirmation popup
+    if _handle_data_change_dialog(page):
+        save(page, "after_dialog_confirm")
+
+    # Diagnostics: success/error
+    result = _wait_for_booking_result(page, timeout_s=18)
+    print("Booking result:", result)
+
+# ==========
+# Main
+# ==========
+def run(playwright: Playwright):
+    validate_config()
+    browser = playwright.chromium.launch(headless=HEADLESS, slow_mo=SLOW_MO_MS)
+    ctx = {}
+    if RECORD_VIDEO:
+        Path("videos").mkdir(exist_ok=True)
+        ctx["record_video_dir"] = "videos"
+    context = browser.new_context(**ctx)
+
+    try:
+        context.tracing.start(screenshots=True, snapshots=True, sources=True)
+    except Exception: pass
+
+    page = context.new_page()
+    page.set_default_timeout(DEFAULT_TIMEOUT_MS)
+
+    try:
+        print(f"Opening {BASE_URL} ...")
+        if not wait_for_app(page, BASE_URL):
+            save(page, "cannot_load_app"); sys.exit(1)
+
+        dismiss_cookies(page)
+
+        click_first_sucursal(page); save(page, "after_step1")
+        select_tramite(page, TARGET_TRAMITE); save(page, "after_step2")
+
+        print("Selecting day/hour …")
+        ok = find_and_pick_earliest_slot(page)
+        save(page, "after_step3_calendar")
+        if not ok:
+            print("No hay citas disponibles (no slots found).")
+            save(page, "no_slots_debug"); sys.exit(2)
+
+        print("Filling contact …")
+        fill_contact_and_confirm(page, CONTACT)
+
+        print("Done.")
+    finally:
+        Path("artifacts").mkdir(exist_ok=True)
+        try: context.tracing.stop(path="artifacts/trace.zip")
+        except Exception: pass
         context.close(); browser.close()
-        sys.exit(2)
-
-    # Step 4
-    print("Filling contact details and confirming ...")
-    fill_contact_and_confirm(page, CONTACT)
-    if "after_confirm" in BREAK_AT: page.pause()
-
-    context.tracing.stop(path="artifacts/trace.zip")
-    context.close()
-    browser.close()
-    print("Trace saved to artifacts/trace.zip (view: playwright show-trace artifacts/trace.zip)")
 
 if __name__ == "__main__":
     with sync_playwright() as p:
