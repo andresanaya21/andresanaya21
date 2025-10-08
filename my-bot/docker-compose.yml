@@ -40,18 +40,26 @@ services:
     environment:
       BASE_URL: "https://citaprevia.ciencia.gob.es/qmaticwebbooking/#/"
       TARGET_TRAMITE: "Asistencia telefónica para la homologación y equivalencia de títulos universitarios extranjeros"
-      # Keep minimal env here; pass the detailed ones via BOT_EXTRA_ENV so the
-      # tick runner forwards them to the spawned bot process as well.
+
+      # Playwright defaults
       HEADLESS: "true"
       SLOW_MO_MS: "0"
       MAX_MONTHS_TO_SCAN: "6"
       DEFAULT_TIMEOUT_MS: "25000"
+
+      # Scheduler config
       TZ: "Europe/Madrid"
-      TICK_INTERVAL: "5"
-      BOT_TIMEOUT: "240"
+      TICK_INTERVAL: "1"          # scheduler poll rate
+      SLOT_MINUTES: "10"          # fire every 10 min
+      RUN_WINDOW_SECONDS: "300"   # keep relaunching during first 5 min of each slot
+      BOT_TIMEOUT: "300"          # also cap each run at 5 min
       WINDOW_DAYS: "SUN,MON,TUE,WED"
-      WINDOW_START: "12:10"
+      WINDOW_START: "12:00"
       WINDOW_END: "14:00"
+
+      LANG: "C.UTF-8"
+      PYTHONIOENCODING: "UTF-8"
+
       BOT_EXTRA_ENV: >
         HEADLESS=true,
         SLOW_MO_MS=0,

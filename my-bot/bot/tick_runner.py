@@ -4,7 +4,7 @@ import subprocess
 import sys
 import time
 from dataclasses import dataclass
-from datetime import datetime, time as dtime
+from datetime import datetime, time as dtime, timedelta
 from typing import Optional, Set
 
 import pytz
@@ -13,19 +13,33 @@ import pytz
 # Config (env-overridable)
 # -------------------------
 TZ = os.getenv("TZ", "Europe/Madrid")
-TICK_INTERVAL = int(os.getenv("TICK_INTERVAL", "5"))  # seconds
+# Loop poll frequency (seconds)
+TICK_INTERVAL = int(os.getenv("TICK_INTERVAL", "1"))
+
+# Slot cadence: run every N minutes
+SLOT_MINUTES = int(os.getenv("SLOT_MINUTES", "10"))
+
+# How long we keep relaunching within each slot (e.g., 300s = 5 minutes)
+RUN_WINDOW_SECONDS = int(os.getenv("RUN_WINDOW_SECONDS", "300"))
+
+# Optional grace window to activate a slot if we happen to start late (sec).
+# Not critical for the repeated-runs behavior but harmless to keep.
+LAUNCH_GRACE_SECONDS = int(os.getenv("LAUNCH_GRACE_SECONDS", "30"))
+
+# Command to run your bot
 BOT_CMD = os.getenv("BOT_CMD", "python /app/book_appointment_real.py")
 
-# Window config (defaults: Sun–Wed, 12:10 → 14:00 inclusive)
-WINDOW_DAYS = os.getenv("WINDOW_DAYS", "SUN,MON,TUE,WED")  # comma list
-WINDOW_START = os.getenv("WINDOW_START", "12:10")          # HH:MM (24h)
-WINDOW_END = os.getenv("WINDOW_END", "14:00")              # HH:MM (24h) inclusive
+# Time window (inclusive end means a slot that starts exactly at WINDOW_END is allowed)
+WINDOW_DAYS = os.getenv("WINDOW_DAYS", "MON,TUE,WED,THU,FRI")
+WINDOW_START = os.getenv("WINDOW_START", "12:00")
+WINDOW_END = os.getenv("WINDOW_END", "14:00")
 
-# Per-run hard timeout (seconds). If the bot exceeds this, it will be terminated.
-BOT_TIMEOUT = int(os.getenv("BOT_TIMEOUT", "180"))         # 3 minutes
+# Per-run hard timeout (seconds). Each bot run will be terminated if it exceeds this,
+# and we also enforce the remaining time of the active slot window.
+BOT_TIMEOUT = int(os.getenv("BOT_TIMEOUT", "300"))  # 5 minutes default
 
-# Optional additional env vars passed to the bot process (comma-separated VAR=VAL)
-BOT_EXTRA_ENV = os.getenv("BOT_EXTRA_ENV", "")             # e.g. "HEADLESS=true,SLOW_MO_MS=0"
+# Extra env forwarded to the bot process (comma-separated VAR=VAL)
+BOT_EXTRA_ENV = os.getenv("BOT_EXTRA_ENV", "")
 
 # Optional start offset (seconds) to stagger multiple instances
 START_OFFSET = int(os.getenv("START_OFFSET", "0"))
@@ -35,27 +49,42 @@ tz = pytz.timezone(TZ)
 # -------------------------
 # Helpers
 # -------------------------
-DAY_MAP = {
-    "MON": 0, "TUE": 1, "WED": 2, "THU": 3, "FRI": 4, "SAT": 5, "SUN": 6
-}
+DAY_MAP = {"MON": 0, "TUE": 1, "WED": 2, "THU": 3, "FRI": 4, "SAT": 5, "SUN": 6}
 
 def parse_days(value: str) -> Set[int]:
     days = set()
     for tok in (t.strip().upper() for t in value.split(",") if t.strip()):
-        if tok not in DAY_MAP:
-            continue
-        days.add(DAY_MAP[tok])
+        if tok in DAY_MAP:
+            days.add(DAY_MAP[tok])
     return days
 
 def parse_hhmm(s: str) -> dtime:
     hh, mm = s.strip().split(":")
     return dtime(int(hh), int(mm))
 
-def now_madrid() -> datetime:
+def now_local() -> datetime:
     return datetime.now(tz)
 
 def log(msg: str):
-    print(f"[tick-runner] {now_madrid().isoformat()} {msg}", flush=True)
+    print(f"[tick-runner] {now_local().isoformat()} {msg}", flush=True)
+
+def build_env() -> dict:
+    env = os.environ.copy()
+    if BOT_EXTRA_ENV:
+        for pair in BOT_EXTRA_ENV.split(","):
+            pair = pair.strip()
+            if pair and "=" in pair:
+                k, v = pair.split("=", 1)
+                env[k.strip()] = v.strip()
+    return env
+
+def build_cmd() -> list:
+    # run via shell so BOT_CMD can be a full command line
+    return ["/bin/sh", "-lc", BOT_CMD]
+
+def floor_to_slot(dt: datetime, minutes: int) -> datetime:
+    """Return dt floored down to the nearest N-minute boundary (seconds=0)."""
+    return dt.replace(minute=(dt.minute // minutes) * minutes, second=0, microsecond=0)
 
 @dataclass
 class Window:
@@ -68,23 +97,7 @@ class Window:
         if wd not in self.days:
             return False
         t = dt.time()
-        # inclusive end
         return (t >= self.start) and (t <= self.end)
-
-def build_env() -> dict:
-    env = os.environ.copy()
-    if BOT_EXTRA_ENV:
-        for pair in BOT_EXTRA_ENV.split(","):
-            pair = pair.strip()
-            if not pair or "=" not in pair: 
-                continue
-            k, v = pair.split("=", 1)
-            env[k.strip()] = v.strip()
-    return env
-
-def build_cmd() -> list:
-    # keep it simple: run via /bin/sh -lc so you can pass a full command line in BOT_CMD
-    return ["/bin/sh", "-lc", BOT_CMD]
 
 # -------------------------
 # Runner
@@ -95,6 +108,10 @@ class TickRunner:
         self.current_proc: Optional[subprocess.Popen] = None
         self.stop = False
 
+        # Active slot tracking
+        self.active_slot_key: Optional[str] = None
+        self.active_slot_end_ts: Optional[float] = None  # epoch seconds when window ends
+
         signal.signal(signal.SIGTERM, self._on_stop)
         signal.signal(signal.SIGINT, self._on_stop)
 
@@ -102,18 +119,47 @@ class TickRunner:
         log("received stop signal — shutting down")
         self.stop = True
 
-    def _start_bot(self):
-        if self.current_proc and self.current_proc.poll() is None:
-            log("previous run still active — skipping this tick")
+    def _slot_key(self, slot_dt: datetime) -> str:
+        return slot_dt.strftime("%Y-%m-%d %H:%M")
+
+    def _activate_slot_if_needed(self, now: datetime, slot: datetime):
+        """
+        If we're in a new slot and within its activation window, mark it active.
+        The slot remains active for RUN_WINDOW_SECONDS, during which we keep
+        launching runs sequentially.
+        """
+        slot_key = self._slot_key(slot)
+        if self.active_slot_key == slot_key:
+            return  # already active
+
+        # Only activate if inside the global window
+        if not self.window.contains(now):
             return
 
+        slot_end = slot + timedelta(seconds=RUN_WINDOW_SECONDS)
+        # Activate if we're within the 5-min window, or within grace right after slot start
+        if now <= slot_end or now <= slot + timedelta(seconds=LAUNCH_GRACE_SECONDS):
+            self.active_slot_key = slot_key
+            self.active_slot_end_ts = slot_end.timestamp()
+            log(f"activated slot {slot_key} (window until {slot_end.time().isoformat(timespec='seconds')})")
+
+    def _deactivate_slot_if_expired(self, now_ts: float):
+        if self.active_slot_end_ts is not None and now_ts >= self.active_slot_end_ts:
+            log(f"slot window ended ({self.active_slot_key})")
+            self.active_slot_key = None
+            self.active_slot_end_ts = None
+
+    def _start_bot(self):
         # Clean up finished process if any
         if self.current_proc and self.current_proc.poll() is not None:
             rc = self.current_proc.returncode
             log(f"previous run finished with exit code {rc}")
             self.current_proc = None
 
-        # Spawn a new run
+        if self.current_proc and self.current_proc.poll() is None:
+            log("run in progress — not launching another concurrently")
+            return False
+
         cmd = build_cmd()
         env = build_env()
         log(f"starting bot: {BOT_CMD}")
@@ -125,13 +171,24 @@ class TickRunner:
             text=True,
             bufsize=1
         )
+        return True
 
-    def _pump_output_and_enforce_timeout(self, start_ts: float):
-        """Stream child output and enforce BOT_TIMEOUT."""
+    def _pump_output_and_enforce_deadlines(self, hard_deadline_ts: Optional[float]):
+        """
+        Stream child output and enforce both BOT_TIMEOUT and the slot hard deadline.
+        hard_deadline_ts: epoch seconds when the slot window ends; we stop the run there.
+        """
         if not self.current_proc:
             return
 
-        # Non-blocking read loop with timeout enforcement
+        start_ts = time.time()
+
+        def time_left():
+            left = BOT_TIMEOUT - (time.time() - start_ts)
+            if hard_deadline_ts is not None:
+                left = min(left, hard_deadline_ts - time.time())
+            return left
+
         while True:
             if self.current_proc.poll() is not None:
                 # process ended, drain remaining output
@@ -148,12 +205,14 @@ class TickRunner:
                 if line:
                     sys.stdout.write(line)
 
-            # timeout?
-            if time.time() - start_ts > BOT_TIMEOUT:
-                log(f"bot exceeded timeout ({BOT_TIMEOUT}s) — terminating")
+            # deadlines?
+            left = time_left()
+            if left is not None and left <= 0:
+                # Stop due to BOT_TIMEOUT or slot window end
+                reason = "timeout" if (time.time() - start_ts) >= BOT_TIMEOUT else "slot window end"
+                log(f"bot exceeded {reason} — terminating")
                 try:
                     self.current_proc.terminate()
-                    # give it a moment
                     try:
                         self.current_proc.wait(timeout=5)
                     except subprocess.TimeoutExpired:
@@ -163,34 +222,44 @@ class TickRunner:
                     self.current_proc = None
                 return
 
-            # short sleep to avoid busy loop
             time.sleep(0.1)
 
     def loop(self):
-        log(f"start — TZ={TZ}, tick={TICK_INTERVAL}s, window_days={WINDOW_DAYS}, window={WINDOW_START}→{WINDOW_END} (inclusive)")
+        log(f"start — TZ={TZ}, slots={SLOT_MINUTES}m, run_window={RUN_WINDOW_SECONDS}s, "
+            f"window_days={WINDOW_DAYS}, window={WINDOW_START}→{WINDOW_END} (inclusive)")
         while not self.stop:
-            now = now_madrid()
-            if self.window.contains(now):
-                # start if not running
+            now = now_local()
+            now_ts = time.time()
+
+            # Determine current slot and activate if needed
+            slot = floor_to_slot(now, SLOT_MINUTES)
+            self._activate_slot_if_needed(now, slot)
+
+            # If active slot window expired, deactivate
+            self._deactivate_slot_if_expired(now_ts)
+
+            # If slot is active and inside global time window, keep launching sequentially
+            if self.active_slot_key and self.active_slot_end_ts and self.window.contains(now):
+                # If nothing running, (re)start immediately and pump until finish/deadline
                 if not (self.current_proc and self.current_proc.poll() is None):
-                    self._start_bot()
-                    # enforce timeout and stream output for this run
-                    self._pump_output_and_enforce_timeout(time.time())
+                    started = self._start_bot()
+                    if started:
+                        self._pump_output_and_enforce_deadlines(self.active_slot_end_ts)
                 else:
-                    log("run in progress — not launching a second one")
+                    # A run is already in progress; just let it continue
+                    pass
             else:
-                # if we exit the window and a run is still active, let it finish (or time out)
+                # Outside active window; if a run is still active, let it finish (but BOT_TIMEOUT still applies)
                 if self.current_proc and self.current_proc.poll() is None:
-                    log("outside window, but a run is active — letting it finish/timeout")
-                else:
-                    log("outside window — idle")
-            # sleep tick interval
+                    log("outside slot window, but a run is active — letting it finish/timeout")
+
+            # sleep a bit
             slept = 0
             while slept < TICK_INTERVAL and not self.stop:
                 time.sleep(1)
                 slept += 1
 
-        # shutdown: if a run is active, try to stop gracefully
+        # shutdown: stop active run gracefully
         if self.current_proc and self.current_proc.poll() is None:
             log("stopping active run on shutdown")
             try:
@@ -205,8 +274,8 @@ class TickRunner:
 # -------------------------
 def main():
     window = Window(
-        days=parse_days(WINDOW_DAYS or "SUN,MON,TUE,WED"),
-        start=parse_hhmm(WINDOW_START or "12:10"),
+        days=parse_days(WINDOW_DAYS or "MON,TUE,WED,THU,FRI"),
+        start=parse_hhmm(WINDOW_START or "12:00"),
         end=parse_hhmm(WINDOW_END or "14:00"),
     )
 
